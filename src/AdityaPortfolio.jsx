@@ -153,6 +153,8 @@ const STYLES = `
 .skill-chip{transition:transform .18s ease,box-shadow .22s ease,border-color .22s ease}
 .skill-chip:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.18);box-shadow:0 12px 26px rgba(0,0,0,.26)}
 .cinema-card{background:radial-gradient(circle at 8% 20%,rgba(249,115,22,.2),transparent 24%),radial-gradient(circle at 85% 80%,rgba(99,102,241,.18),transparent 28%),linear-gradient(135deg,rgba(18,18,30,.92),rgba(10,10,18,.72))}
+.cinema-title{font-size:clamp(1.45rem,7vw,2.5rem);line-height:.92;letter-spacing:-.05em;overflow-wrap:anywhere}
+.cinema-copy{max-width:34rem;margin-inline:auto}
 .counter-card{text-align:center;padding:1.5rem;border-radius:1.5rem}
 .counter-value{font-family:'Syne',sans-serif;font-size:clamp(2rem,4vw,3.25rem);line-height:1;letter-spacing:-.05em}
 .contact-card{padding:clamp(1.5rem,4vw,4rem);border-radius:2rem;background:radial-gradient(circle at 15% 20%,rgba(249,115,22,.12),transparent 24%),radial-gradient(circle at 80% 80%,rgba(99,102,241,.12),transparent 28%),rgba(255,255,255,.04)}
@@ -182,7 +184,8 @@ const STYLES = `
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 @keyframes marqueeReverse{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
 @media (max-width:1023px){.hero-title{min-height:auto}}
-@media (max-width:639px){.hero-title{font-size:clamp(2.5rem,10vw,3.5rem)}.project-card{min-height:auto}.marquee-shell::before,.marquee-shell::after{width:2.5rem}}
+@media (max-width:639px){.hero-title{font-size:clamp(2.5rem,10vw,3.5rem)}.project-card{min-height:auto}.marquee-shell::before,.marquee-shell::after{width:2.5rem}.cinema-card{padding:1.35rem}.cinema-title{font-size:clamp(1.35rem,6.6vw,1.9rem);letter-spacing:-.04em}.cinema-copy{font-size:.95rem;line-height:1.9}}
+@media (min-width:1024px){.cinema-copy{margin-inline:0}}
 @media (hover:none),(pointer:coarse){.tilt-frame{transform:none!important}.cursor-dot,.cursor-ring{display:none!important}}
 `;
 
@@ -873,15 +876,15 @@ function AdityaPortfolio() {
             </div>
 
             <div className="cinema-card glass-card reveal-item mt-8 rounded-[2rem] p-6 sm:p-8 lg:p-10" data-reveal="true" style={{ "--delay": "180ms" }}>
-              <div className="grid items-center gap-6 lg:grid-cols-[auto_1fr]">
-                <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(249,115,22,0.22),rgba(99,102,241,0.25))] text-5xl shadow-[0_12px_44px_rgba(0,0,0,0.24)] lg:mx-0">
+              <div className="grid items-center gap-5 lg:grid-cols-[auto_1fr]">
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(249,115,22,0.22),rgba(99,102,241,0.25))] text-5xl shadow-[0_12px_44px_rgba(0,0,0,0.24)] sm:h-28 sm:w-28 lg:mx-0">
                   <span aria-hidden="true">🎬</span>
                 </div>
                 <div className="space-y-4 text-center lg:text-left">
-                  <h3 className="syne text-[clamp(1.8rem,3vw,2.5rem)] font-extrabold tracking-[-0.05em]">
+                  <h3 className="cinema-title syne font-extrabold">
                     Cinematography
                   </h3>
-                  <p className="max-w-3xl text-[1rem] leading-7 text-[rgba(240,240,245,0.78)]">
+                  <p className="cinema-copy text-[1rem] leading-7 text-[rgba(240,240,245,0.78)]">
                     Beyond code — I shoot and grade cinematic visuals. Creative techniques, visual storytelling.
                     See the work:
                   </p>
