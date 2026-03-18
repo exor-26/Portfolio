@@ -168,14 +168,18 @@ const STYLES = `
 .cursor-dot.is-hidden{opacity:0!important}
 .mobile-menu{position:fixed;inset:0;z-index:55;padding:6rem 1.5rem 2rem;background:radial-gradient(circle at top,rgba(99,102,241,.14),transparent 32%),rgba(8,8,16,.92);backdrop-filter:blur(24px);transform:translateY(-100%);transition:transform .32s ease}
 .mobile-menu.is-open{transform:translateY(0)}
+.mobile-menu-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:2rem}
+.mobile-close{display:inline-flex;align-items:center;justify-content:center;width:3rem;height:3rem;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#f0f0f5;font-size:1.35rem;line-height:1;backdrop-filter:blur(16px)}
 .nav-link{position:relative;color:rgba(240,240,245,.72);transition:color .18s ease}
 .nav-link:hover,.nav-link.is-active{color:#fff}
 .nav-link.is-active::after{content:"";position:absolute;left:50%;bottom:-.65rem;width:.4rem;height:.4rem;transform:translateX(-50%);border-radius:999px;background:var(--orange);box-shadow:0 0 18px rgba(249,115,22,.7)}
 .menu-button{width:3rem;height:3rem;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);backdrop-filter:blur(16px)}
-.menu-button span{display:block;width:1.2rem;height:2px;margin:.22rem auto;border-radius:999px;background:#f0f0f5;transition:transform .18s ease,opacity .18s ease}
-.menu-button.is-open span:nth-child(1){transform:translateY(6px) rotate(45deg)}
-.menu-button.is-open span:nth-child(2){opacity:0}
-.menu-button.is-open span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+.menu-button{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:.34rem;padding:.7rem}
+.menu-button span{display:block;height:2px;border-radius:999px;background:#f0f0f5;transition:transform .18s ease,width .18s ease,opacity .18s ease}
+.menu-button span:nth-child(1){width:1.55rem}
+.menu-button span:nth-child(2){width:1.15rem}
+.menu-button.is-open span:nth-child(1){width:1.4rem;transform:translateY(4px) rotate(45deg)}
+.menu-button.is-open span:nth-child(2){width:1.4rem;transform:translateY(-4px) rotate(-45deg)}
 @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 @keyframes blink{50%{opacity:0}}
 @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
@@ -184,6 +188,7 @@ const STYLES = `
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 @keyframes marqueeReverse{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
 @media (max-width:1023px){.hero-title{min-height:auto}}
+@media (min-width:1024px){.menu-button{display:none!important}}
 @media (max-width:639px){.hero-title{font-size:clamp(2.5rem,10vw,3.5rem)}.project-card{min-height:auto}.marquee-shell::before,.marquee-shell::after{width:2.5rem}.cinema-card{padding:1.35rem}.cinema-title{font-size:clamp(1.35rem,6.6vw,1.9rem);letter-spacing:-.04em}.cinema-copy{font-size:.95rem;line-height:1.9}}
 @media (min-width:1024px){.cinema-copy{margin-inline:0}}
 @media (hover:none),(pointer:coarse){.tilt-frame{transform:none!important}.cursor-dot,.cursor-ring{display:none!important}}
@@ -703,13 +708,37 @@ function AdityaPortfolio() {
           >
             <span />
             <span />
-            <span />
           </button>
         </nav>
       </header>
 
       <div className={`mobile-menu lg:hidden ${menuOpen ? "is-open" : ""}`}>
         <div className="mx-auto flex max-w-xl flex-col gap-6">
+          <div className="mobile-menu-top">
+            <button
+              type="button"
+              className="syne flex items-center gap-1 text-xl font-extrabold tracking-[0.18em] text-white"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                setMenuOpen(false);
+              }}
+              data-cursor="button"
+            >
+              <span>ADITYA</span>
+              <span className="text-[#f97316]">.</span>
+            </button>
+
+            <button
+              type="button"
+              className="mobile-close"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Close menu"
+              data-cursor="button"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
