@@ -48,6 +48,15 @@ const PROJECTS = [
       "Offline human-level WhatsApp agent. Qwen 2.5 3B running fully local — zero cloud. Smart takeover on inactivity, steps back when you re-engage.",
     tech: ["Qwen 2.5", "Local LLM", "Python"],
     link: "https://github.com/exor-26"
+  },
+  {
+    name: "Protected Course",
+    accent: "#ef4444",
+    tag: "Private · Course",
+    description:
+      "A locked AI learning area with manual access, device binding, timed sessions, progressive unlocks, and rights-protected lessons.",
+    tech: ["React", "Firestore", "Netlify Functions"],
+    link: "/course"
   }
 ];
 
@@ -334,6 +343,7 @@ function TiltCard({ children, className = "", accent = "#6366f1", canHover, styl
 
 function ProjectCard({ project, index, canHover }) {
   const cardRef = useRef(null);
+  const isExternal = /^https?:\/\//.test(project.link);
 
   const handleMove = (event) => {
     if (!canHover || !cardRef.current) {
@@ -371,8 +381,8 @@ function ProjectCard({ project, index, canHover }) {
           </div>
           <a
             href={project.link}
-            target="_blank"
-            rel="noreferrer"
+            target={isExternal ? "_blank" : undefined}
+            rel={isExternal ? "noreferrer" : undefined}
             aria-label={`Open ${project.name}`}
             className="project-link"
             data-cursor="button"

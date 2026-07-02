@@ -1,0 +1,9 @@
+{
+  "name": "portfolio-course-functions",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "firebase-admin": "^13.6.0"
+  }
+}
