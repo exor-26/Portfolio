@@ -16,11 +16,13 @@
     "url": "https://github.com/exor-26/Portfolio.git"
   },
   "dependencies": {
-    "@babel/standalone": "^8.0.3",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-router-dom": "^7.18.0"
-  },
+  "@babel/standalone": "^8.0.3",
+  "bcryptjs": "^3.0.2",
+  "firebase-admin": "^13.6.0",
+  "react": "^19.1.1",
+  "react-dom": "^19.1.1",
+  "react-router-dom": "^7.18.0"
+},
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "@vitejs/plugin-react": "^5.0.2",
