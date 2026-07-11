@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 
 const NAV_ITEMS = [
   { id: "work", label: "Work" },
@@ -18,9 +20,9 @@ const PROJECTS = [
     accent: "#f97316",
     tag: "Android · Media",
     description:
-      "14MB video player with FFmpeg software decoding, EAC3/AC3, gesture controls, subtitles — 25% faster load than market alternatives. Lighter than anything on the market.",
+      "19MB video player with FFmpeg software decoding, EAC3/AC3, gesture controls, subtitles — 25% faster load than market alternatives. Lighter than anything on the market.",
     tech: ["Android", "ExoPlayer", "FFmpeg", "Java"],
-    link: "https://github.com/exor-26"
+    link: "https://github.com/exor-26/CineStream"
   },
   {
     name: "TBUS",
@@ -47,7 +49,7 @@ const PROJECTS = [
     description:
       "Offline human-level WhatsApp agent. Qwen 2.5 3B running fully local — zero cloud. Smart takeover on inactivity, steps back when you re-engage.",
     tech: ["Qwen 2.5", "Local LLM", "Python"],
-    link: "https://github.com/exor-26"
+    link: "https://github.com/exor-26/wa-agent"
   },
   {
     name: "Protected Course",
@@ -102,10 +104,11 @@ const MARQUEE_ROWS = [
   ]
 ];
 
+// Added color field to each counter target
 const COUNTER_TARGETS = [
-  { key: "projects", label: "Projects", value: 5, suffix: "+" },
-  { key: "domains", label: "Domains", value: 3, suffix: "+" },
-  { key: "philosophy", label: "Architecture Philosophy", value: 1, suffix: "" }
+  { key: "projects", label: "Projects", value: 5, suffix: "+", color: "#f97316" },
+  { key: "domains", label: "Domains", value: 3, suffix: "+", color: "#6366f1" },
+  { key: "philosophy", label: "Architecture Philosophy", value: 1, suffix: "", color: "#a855f7" }
 ];
 
 const STYLES = `
@@ -115,6 +118,12 @@ const STYLES = `
 .aditya-portfolio a,.aditya-portfolio button{-webkit-tap-highlight-color:transparent}
 @media (hover:hover) and (pointer:fine){.aditya-portfolio,.aditya-portfolio *{cursor:none!important}}
 .aditya-noise{position:fixed;inset:0;pointer-events:none;opacity:.035;mix-blend-mode:soft-light;z-index:3;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
+.liquid-orb-shell{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.liquid-orb-shell::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 79% 28%,rgba(249,115,22,.12),transparent 10%),radial-gradient(circle at 76% 30%,rgba(99,102,241,.13),transparent 14%),radial-gradient(circle at 72% 35%,rgba(168,85,247,.1),transparent 20%);filter:blur(42px);opacity:.62}
+.liquid-orb-shell::after{content:"";position:absolute;left:61%;right:10%;top:17%;bottom:39%;border-radius:50%;background:radial-gradient(circle,rgba(8,8,16,.3),transparent 68%);filter:blur(40px);opacity:.4}
+.liquid-orb-canvas{position:absolute;inset:0;overflow:hidden}
+.liquid-orb-canvas canvas{width:100%!important;height:100%!important}
+.liquid-orb-veil{position:absolute;inset:0;background:radial-gradient(circle at 80% 28%,rgba(255,255,255,.03),transparent 4%),radial-gradient(circle at 78% 30%,rgba(249,115,22,.1),transparent 9%),radial-gradient(circle at 75% 33%,rgba(99,102,241,.12),transparent 13%),radial-gradient(circle at 72% 36%,rgba(168,85,247,.09),transparent 17%);filter:blur(36px);mix-blend-mode:screen;opacity:.38}
 .orb{position:fixed;border-radius:999px;filter:blur(80px);pointer-events:none;z-index:1;opacity:.09;animation:drift 14s ease-in-out infinite alternate}
 .orb-one{top:8%;left:-8%;width:clamp(15rem,30vw,28rem);height:clamp(15rem,30vw,28rem);background:radial-gradient(circle,rgba(249,115,22,.9),transparent 70%)}
 .orb-two{top:38%;right:-10%;width:clamp(16rem,32vw,30rem);height:clamp(16rem,32vw,30rem);background:radial-gradient(circle,rgba(99,102,241,.9),transparent 68%);animation-duration:12s}
@@ -136,20 +145,19 @@ const STYLES = `
 .hero-copy{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
 .hero-copy.is-visible{opacity:1;transform:translateY(0)}
 .hero-subtitle{max-width:38rem;color:rgba(240,240,245,.78);font-size:clamp(1rem,1.4vw,1.15rem);line-height:1.75}
+.hero-cta-row{position:relative;z-index:1}
 .btn-base{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:.7rem;border-radius:999px;padding:.95rem 1.35rem;font-size:.96rem;font-weight:600;letter-spacing:.01em;transition:transform .18s ease,background .24s ease,border-color .24s ease,box-shadow .24s ease;will-change:transform}
 .btn-primary{background:linear-gradient(135deg,rgba(249,115,22,1),rgba(251,146,60,.96));color:#fff7ed;box-shadow:0 14px 44px rgba(249,115,22,.28)}
 .btn-glass{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06)}
-.tilt-frame{transform-style:preserve-3d;transition:transform .18s ease,box-shadow .22s ease;will-change:transform}
+.tilt-frame{transition:box-shadow .22s ease;will-change:box-shadow}
+.tilt-motion{transform-style:preserve-3d;transform-origin:center center;will-change:transform}
 .tilt-depth{transform:translateZ(26px)}
-.scroll-indicator{position:absolute;left:50%;bottom:1.75rem;transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;width:2.6rem;height:2.6rem;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);backdrop-filter:blur(20px);animation:bounce 2.2s ease infinite}
-.marquee-shell{position:relative;overflow:hidden}
-.marquee-shell::before,.marquee-shell::after{content:"";position:absolute;top:0;bottom:0;width:4rem;z-index:2;pointer-events:none}
-.marquee-shell::before{left:0;background:linear-gradient(90deg,#080810,rgba(8,8,16,0))}
-.marquee-shell::after{right:0;background:linear-gradient(270deg,#080810,rgba(8,8,16,0))}
+.scroll-indicator{position:absolute;left:50%;bottom:1.6rem;transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;width:2.6rem;height:2.6rem;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);backdrop-filter:blur(20px);animation:bounce 2.2s ease infinite}
+.marquee-shell{position:relative;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 92%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 92%,transparent 100%)}
 .marquee-track{display:flex;width:max-content;gap:1rem;animation:marquee 30s linear infinite}
 .marquee-row[data-direction="reverse"] .marquee-track{animation-name:marqueeReverse}
 .marquee-row:hover .marquee-track{animation-play-state:paused}
-.pill{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:rgba(240,240,245,.78);padding:.7rem 1rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.pill{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border-radius:999px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:rgba(240,240,245,.74);padding:.7rem 1rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
 .section-kicker{color:rgba(249,115,22,.92);font-size:.78rem;letter-spacing:.35em;text-transform:uppercase}
 .section-title{font-size:clamp(2rem,4vw,3.75rem);line-height:1;letter-spacing:-.05em}
 .reveal-item{opacity:0;transform:translateY(30px);transition:opacity .7s cubic-bezier(.2,1,.22,1),transform .7s cubic-bezier(.2,1,.22,1);transition-delay:var(--delay,0ms)}
@@ -161,8 +169,8 @@ const STYLES = `
 .project-link:hover{background:var(--accent);border-color:var(--accent);color:#fff;transform:translateY(-2px)}
 .skill-chip{transition:transform .18s ease,box-shadow .22s ease,border-color .22s ease}
 .skill-chip:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.18);box-shadow:0 12px 26px rgba(0,0,0,.26)}
-.cinema-card{background:radial-gradient(circle at 8% 20%,rgba(249,115,22,.2),transparent 24%),radial-gradient(circle at 85% 80%,rgba(99,102,241,.18),transparent 28%),linear-gradient(135deg,rgba(18,18,30,.92),rgba(10,10,18,.72))}
-.cinema-title{font-size:clamp(1.45rem,7vw,2.5rem);line-height:.92;letter-spacing:-.05em;overflow-wrap:anywhere}
+.cinema-card{background:radial-gradient(circle at 8% 20%,rgba(249,115,22,.14),transparent 24%),radial-gradient(circle at 85% 80%,rgba(99,102,241,.12),transparent 28%),rgba(255,255,255,.04)}
+.cinema-title{font-size:clamp(1.3rem,6vw,2.5rem);line-height:.92;letter-spacing:-.05em;white-space:nowrap}
 .cinema-copy{max-width:34rem;margin-inline:auto}
 .counter-card{text-align:center;padding:1.5rem;border-radius:1.5rem}
 .counter-value{font-family:'Syne',sans-serif;font-size:clamp(2rem,4vw,3.25rem);line-height:1;letter-spacing:-.05em}
@@ -189,21 +197,369 @@ const STYLES = `
 .menu-button span:nth-child(2){width:1.15rem}
 .menu-button.is-open span:nth-child(1){width:1.4rem;transform:translateY(4px) rotate(45deg)}
 .menu-button.is-open span:nth-child(2){width:1.4rem;transform:translateY(-4px) rotate(-45deg)}
+/* App icon contact buttons */
+.app-icon-row{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;margin-top:2.5rem}
+.app-icon-wrap{display:inline-flex;flex-direction:column;align-items:center;gap:.65rem;text-decoration:none;color:var(--text);transition:transform .2s ease}
+.app-icon-wrap:hover{transform:translateY(-5px)}
+.app-icon-box{width:4.25rem;height:4.25rem;border-radius:1.3rem;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.10);box-shadow:0 8px 28px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);transition:background .22s ease,box-shadow .22s ease,border-color .22s ease}
+.app-icon-wrap:hover .app-icon-box{background:rgba(255,255,255,.10);box-shadow:0 14px 36px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)}
+.app-icon-label{font-size:.76rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:rgba(240,240,245,.6)}
 @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 @keyframes blink{50%{opacity:0}}
 @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 @keyframes drift{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(3rem,-2rem,0) scale(1.08)}}
+@keyframes blobFloat{0%{transform:translate3d(0,0,0) rotate(0deg)}33%{transform:translate3d(8px,-10px,0) rotate(6deg)}66%{transform:translate3d(-10px,6px,0) rotate(-5deg)}100%{transform:translate3d(0,0,0) rotate(0deg)}}
 @keyframes bounce{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-10px)}}
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 @keyframes marqueeReverse{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
+@keyframes tintDrift{0%{transform:translate3d(0,0,0) rotate(0deg)}50%{transform:translate3d(-4px,6px,0) rotate(8deg)}100%{transform:translate3d(0,0,0) rotate(0deg)}}
+@keyframes floatOrbit{0%{transform:translate(0px,0px) rotate(0deg)}20%{transform:translate(4px,-6px) rotate(4deg)}45%{transform:translate(-5px,-3px) rotate(-3deg)}65%{transform:translate(3px,5px) rotate(2deg)}80%{transform:translate(-4px,3px) rotate(-5deg)}100%{transform:translate(0px,0px) rotate(0deg)}}
+.github-float{animation:floatOrbit 6s ease-in-out infinite;will-change:transform}
 @media (max-width:1023px){.hero-title{min-height:auto}}
-@media (min-width:1024px){.menu-button{display:none!important}}
-@media (max-width:639px){.hero-title{font-size:clamp(2.5rem,10vw,3.5rem)}.project-card{min-height:auto}.marquee-shell::before,.marquee-shell::after{width:2.5rem}.cinema-card{padding:1.35rem}.cinema-title{font-size:clamp(1.35rem,6.6vw,1.9rem);letter-spacing:-.04em}.cinema-copy{font-size:.95rem;line-height:1.9}}
+@media (min-width:1024px){.menu-button{display:none!important}.project-card{min-height:26rem}}
+@media (max-width:639px){.hero-title{font-size:clamp(2.5rem,10vw,3.5rem)}.project-card{min-height:auto}.marquee-shell{-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 12%,#000 88%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 12%,#000 88%,transparent 100%)}.cinema-card{padding:1.35rem}.app-icon-row{gap:1.5rem}.hero-copy{padding-bottom:6.25rem}.scroll-indicator{bottom:1.35rem}.liquid-orb-shell::before{background:radial-gradient(circle at 82% 24%,rgba(249,115,22,.09),transparent 9%),radial-gradient(circle at 79% 27%,rgba(99,102,241,.11),transparent 13%),radial-gradient(circle at 75% 31%,rgba(168,85,247,.08),transparent 17%)}.liquid-orb-shell::after{left:60%;right:8%;top:16%;bottom:50%}.liquid-orb-veil{background:radial-gradient(circle at 82% 24%,rgba(255,255,255,.02),transparent 4%),radial-gradient(circle at 79% 27%,rgba(249,115,22,.08),transparent 7%),radial-gradient(circle at 76% 30%,rgba(99,102,241,.09),transparent 11%),radial-gradient(circle at 73% 34%,rgba(168,85,247,.07),transparent 15%)}} 
 @media (min-width:1024px){.cinema-copy{margin-inline:0}}
 @media (hover:none),(pointer:coarse){.tilt-frame{transform:none!important}.cursor-dot,.cursor-ring{display:none!important}}
 `;
 
 const titleSource = "Software\nArchitect";
+
+const ORB_VERTEX_SHADER = `
+varying vec3 vNormal;
+varying vec3 vWorldPosition;
+varying vec3 vPosition;
+
+void main() {
+  vNormal = normalize(normalMatrix * normal);
+  vPosition = position;
+  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+  vWorldPosition = worldPosition.xyz;
+  gl_Position = projectionMatrix * viewMatrix * worldPosition;
+}
+`;
+
+const ORB_FRAGMENT_SHADER = `
+uniform float uTime;
+uniform float uEnergy;
+uniform float uHueShift;
+uniform float uBrightness;
+
+varying vec3 vNormal;
+varying vec3 vWorldPosition;
+varying vec3 vPosition;
+
+float hash(vec3 p) {
+  p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float noise(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+
+  return mix(
+    mix(
+      mix(hash(i + vec3(0.0, 0.0, 0.0)), hash(i + vec3(1.0, 0.0, 0.0)), f.x),
+      mix(hash(i + vec3(0.0, 1.0, 0.0)), hash(i + vec3(1.0, 1.0, 0.0)), f.x),
+      f.y
+    ),
+    mix(
+      mix(hash(i + vec3(0.0, 0.0, 1.0)), hash(i + vec3(1.0, 0.0, 1.0)), f.x),
+      mix(hash(i + vec3(0.0, 1.0, 1.0)), hash(i + vec3(1.0, 1.0, 1.0)), f.x),
+      f.y
+    ),
+    f.z
+  );
+}
+
+float fbm(vec3 p) {
+  float value = 0.0;
+  float amplitude = 0.5;
+  for (int i = 0; i < 5; i++) {
+    value += amplitude * noise(p);
+    p *= 2.03;
+    amplitude *= 0.5;
+  }
+  return value;
+}
+
+void main() {
+  vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+  vec3 normal = normalize(vNormal);
+  vec3 spherePos = normalize(vPosition);
+
+  float huePhase = uHueShift * 0.015;
+  float flowA = fbm(spherePos * 3.0 + vec3(huePhase, uTime * 0.18, -uTime * 0.12));
+  float flowB = fbm(spherePos.yzx * 4.4 + vec3(-uTime * 0.11, huePhase * 0.8, uTime * 0.16));
+  float flowC = fbm(spherePos.zxy * 5.1 - vec3(uTime * 0.13, -uTime * 0.1, huePhase));
+  float flowD = fbm((spherePos + vec3(flowA, flowC, flowB)) * 6.0 + uTime * 0.08);
+
+  vec3 orange = vec3(0.98, 0.46, 0.16);
+  vec3 magenta = vec3(0.94, 0.34, 0.78);
+  vec3 indigo = vec3(0.38, 0.44, 0.98);
+  vec3 violet = vec3(0.69, 0.43, 0.94);
+
+  vec3 drift = vec3(
+    (flowA - 0.5) * 0.16,
+    (flowB - 0.5) * 0.16,
+    (flowC - 0.5) * 0.16
+  );
+
+  float orangeMask = pow(clamp(1.0 - distance(spherePos + drift * 0.35, normalize(vec3(-0.58, 0.28, 0.22))) / 1.32, 0.0, 1.0), 2.2);
+  float magentaMask = pow(clamp(1.0 - distance(spherePos - drift * 0.28, normalize(vec3(0.12, -0.18, 0.62))) / 1.28, 0.0, 1.0), 2.0);
+  float indigoMask = pow(clamp(1.0 - distance(spherePos + drift * 0.22, normalize(vec3(0.64, 0.12, -0.08))) / 1.34, 0.0, 1.0), 2.1);
+  float violetMask = pow(clamp(1.0 - distance(spherePos - drift * 0.18, normalize(vec3(-0.06, 0.7, -0.2))) / 1.42, 0.0, 1.0), 1.8);
+
+  vec3 color =
+    orange * (0.18 + orangeMask * 0.42) +
+    magenta * (0.44 + magentaMask * 0.98) +
+    indigo * (0.38 + indigoMask * 0.86) +
+    violet * (0.28 + violetMask * 0.58);
+
+  float innerCloud = fbm((spherePos + vec3(flowB, flowC, flowA)) * 7.2 - uTime * 0.04);
+  color *= 0.84 + innerCloud * 0.24;
+  color += mix(magenta, indigo, 0.48) * pow(max(innerCloud - 0.58, 0.0), 1.6) * 0.28;
+
+  float coreGlow = 1.0 - smoothstep(0.0, 0.94, length(vPosition));
+  float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.2);
+  float sheen = pow(max(dot(reflect(-viewDir, normal), vec3(-0.18, 0.74, 1.0)), 0.0), 24.0);
+  float innerRim = pow(1.0 - abs(dot(normal, viewDir)), 5.0);
+
+  color *= 0.8 + coreGlow * (1.04 + uEnergy * 0.24);
+  color += mix(magenta, indigo, 0.52) * innerRim * 0.22;
+  color += mix(violet, magenta, 0.54) * sheen * (0.06 + uEnergy * 0.025);
+  color += vec3(0.06, 0.05, 0.14) * fresnel * 0.1;
+  color *= 1.02 + uBrightness;
+
+  float alpha = 0.7 + coreGlow * 0.2;
+  gl_FragColor = vec4(color, alpha);
+}
+`;
+
+function RealOrbScene({ motionRef, canHover }) {
+  return (
+    <div className="liquid-orb-shell" aria-hidden="true">
+      <div className="liquid-orb-veil" />
+      <div className="liquid-orb-canvas">
+        <Canvas
+          dpr={canHover ? [1, 1.8] : [1, 1.3]}
+          camera={{ position: [0, 0, 7], fov: 34 }}
+          gl={{ antialias: true, alpha: true }}
+        >
+          <ambientLight intensity={0.2} />
+          <hemisphereLight args={["#c6b8ff", "#060811", 0.4]} />
+          <directionalLight position={[2.4, 2.8, 5]} intensity={0.34} color="#d9ccff" />
+          <pointLight position={[-2.8, 1.5, 3.2]} intensity={7} distance={9} color="#f97316" />
+          <pointLight position={[2.8, -0.8, 3.1]} intensity={10} distance={9} color="#6366f1" />
+          <pointLight position={[0.35, 0.7, 2.4]} intensity={11} distance={6} color="#ec4899" />
+          <WaterOrb motionRef={motionRef} />
+        </Canvas>
+      </div>
+    </div>
+  );
+}
+
+function WaterOrb({ motionRef }) {
+  const groupRef = useRef(null);
+  const shellGroupRef = useRef(null);
+  const shellRef = useRef(null);
+  const innerRef = useRef(null);
+  const coreRef = useRef(null);
+  const haloRef = useRef(null);
+  const stateRef = useRef({
+    x: 0,
+    y: 0,
+    driftX: 0,
+    driftY: 0,
+    tiltX: 0,
+    tiltY: 0,
+    energy: 0.12,
+    splash: 0,
+    scale: 1,
+    hue: 0
+  });
+
+  useFrame((renderState, delta) => {
+    const target = motionRef.current;
+    const current = stateRef.current;
+    const elapsed = renderState.clock.elapsedTime;
+    const { width, height } = renderState.viewport;
+    const isPhone = width < 7;
+    const baseX = isPhone ? width * 0.42 : width * 0.31;
+    const baseY = isPhone ? height * 0.19 : height * 0.16;
+    const baseScale = isPhone ? 0.72 : 0.92;
+
+    target.energy = THREE.MathUtils.lerp(target.energy, 0.14, 0.018);
+    target.splash = THREE.MathUtils.lerp(target.splash, 0.04, 0.04);
+    target.scale = THREE.MathUtils.lerp(target.scale, 1, 0.03);
+    target.hue = THREE.MathUtils.lerp(target.hue, 0, 0.025);
+
+    current.x = THREE.MathUtils.lerp(current.x, target.x, 0.055);
+    current.y = THREE.MathUtils.lerp(current.y, target.y, 0.055);
+    current.driftX = THREE.MathUtils.lerp(current.driftX, target.driftX, 0.06);
+    current.driftY = THREE.MathUtils.lerp(current.driftY, target.driftY, 0.06);
+    current.tiltX = THREE.MathUtils.lerp(current.tiltX, target.tiltX, 0.08);
+    current.tiltY = THREE.MathUtils.lerp(current.tiltY, target.tiltY, 0.08);
+    current.energy = THREE.MathUtils.lerp(current.energy, target.energy, 0.08);
+    current.splash = THREE.MathUtils.lerp(current.splash, target.splash, 0.08);
+    current.scale = THREE.MathUtils.lerp(current.scale, target.scale, 0.06);
+    current.hue = THREE.MathUtils.lerp(current.hue, target.hue, 0.06);
+
+    const bobX = Math.sin(elapsed * 0.38) * 0.08;
+    const bobY = Math.cos(elapsed * 0.52) * 0.09;
+    const scale = (current.scale + current.energy * 0.03) * baseScale;
+
+    if (groupRef.current) {
+      groupRef.current.position.x = baseX + current.x + current.driftX + bobX;
+      groupRef.current.position.y = baseY + current.y + current.driftY + bobY;
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(
+        groupRef.current.rotation.x,
+        current.tiltX + Math.sin(elapsed * 0.31) * 0.05,
+        0.08
+      );
+      groupRef.current.rotation.y += delta * (0.2 + current.energy * 0.45);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(
+        groupRef.current.rotation.z,
+        current.tiltY * 0.5 + Math.cos(elapsed * 0.28) * 0.03,
+        0.06
+      );
+      groupRef.current.scale.setScalar(scale);
+    }
+
+    if (shellGroupRef.current) {
+      shellGroupRef.current.scale.set(
+        1 + Math.sin(elapsed * 0.34) * 0.012,
+        1 + Math.cos(elapsed * 0.28) * 0.012,
+        1
+      );
+    }
+
+    if (shellRef.current) {
+      shellRef.current.material.thickness = 1.15 + current.energy * 0.7;
+      shellRef.current.material.iridescence = 0.52 + current.energy * 0.26;
+      shellRef.current.material.attenuationDistance = 0.72 + (1 - current.energy) * 0.32;
+      shellRef.current.material.color.setHSL(0.72 + current.hue * 0.0002, 0.1, 0.72);
+      shellRef.current.material.opacity = 0.22 + current.energy * 0.04;
+    }
+
+    if (haloRef.current) {
+      haloRef.current.material.opacity = 0.035 + current.energy * 0.025;
+      haloRef.current.scale.setScalar(1.34 + current.energy * 0.08);
+    }
+
+    if (innerRef.current) {
+      innerRef.current.material.uniforms.uTime.value = elapsed;
+      innerRef.current.material.uniforms.uEnergy.value = current.energy;
+      innerRef.current.material.uniforms.uHueShift.value = current.hue;
+      innerRef.current.material.uniforms.uBrightness.value = 0.14;
+      innerRef.current.rotation.y -= delta * (0.16 + current.energy * 0.18);
+      innerRef.current.rotation.x += delta * 0.08;
+      innerRef.current.scale.set(
+        0.88 + current.splash * 0.06,
+        0.84 - current.splash * 0.03,
+        0.88
+      );
+    }
+
+    if (coreRef.current) {
+      coreRef.current.material.uniforms.uTime.value = elapsed * 1.2 + 12;
+      coreRef.current.material.uniforms.uEnergy.value = current.energy * 1.08;
+      coreRef.current.material.uniforms.uHueShift.value = current.hue * 0.8;
+      coreRef.current.material.uniforms.uBrightness.value = 0.28;
+      coreRef.current.rotation.y += delta * (0.26 + current.energy * 0.32);
+      coreRef.current.rotation.z -= delta * 0.07;
+      coreRef.current.scale.set(
+        0.66 + current.splash * 0.08,
+        0.62 - current.splash * 0.04,
+        0.66
+      );
+    }
+  });
+
+  return (
+    <group ref={groupRef}>
+      <mesh ref={haloRef} scale={1.44} position={[0, 0, -0.5]}>
+        <sphereGeometry args={[1, 64, 64]} />
+        <meshBasicMaterial
+          color="#ff8a3d"
+          transparent
+          opacity={0.1}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+
+      <mesh ref={innerRef} scale={0.88}>
+        <sphereGeometry args={[1, 128, 128]} />
+        <shaderMaterial
+          vertexShader={ORB_VERTEX_SHADER}
+          fragmentShader={ORB_FRAGMENT_SHADER}
+          uniforms={{
+            uTime: { value: 0 },
+            uEnergy: { value: 0.2 },
+            uHueShift: { value: 0 },
+            uBrightness: { value: 0.12 }
+          }}
+          transparent
+          depthWrite={false}
+          side={THREE.BackSide}
+        />
+      </mesh>
+
+      <mesh ref={coreRef} scale={0.66}>
+        <sphereGeometry args={[1, 96, 96]} />
+        <shaderMaterial
+          vertexShader={ORB_VERTEX_SHADER}
+          fragmentShader={ORB_FRAGMENT_SHADER}
+          uniforms={{
+            uTime: { value: 0 },
+            uEnergy: { value: 0.24 },
+            uHueShift: { value: 0 },
+            uBrightness: { value: 0.22 }
+          }}
+          transparent
+          depthWrite={false}
+        />
+      </mesh>
+
+      <group ref={shellGroupRef}>
+        <mesh ref={shellRef}>
+          <sphereGeometry args={[1, 128, 128]} />
+          <meshPhysicalMaterial
+            transparent
+            opacity={0.24}
+            roughness={0.03}
+            metalness={0}
+            transmission={1}
+            thickness={1.15}
+            ior={1.33}
+            clearcoat={1}
+            clearcoatRoughness={0.015}
+            iridescence={0.58}
+            iridescenceIOR={1.3}
+            reflectivity={1}
+            attenuationColor="#d6c0ff"
+            attenuationDistance={2.35}
+            envMapIntensity={0.46}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      </group>
+
+      <mesh scale={[0.38, 0.2, 0.08]} position={[-0.34, 0.36, 0.9]} rotation={[-0.28, -0.3, 0.26]}>
+        <sphereGeometry args={[1, 48, 48]} />
+        <meshBasicMaterial color="#d9c8ff" transparent opacity={0.07} depthWrite={false} />
+      </mesh>
+
+      <mesh scale={[0.18, 0.09, 0.06]} position={[0.16, -0.08, 0.94]} rotation={[0.12, 0.32, -0.18]}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial color="#ff8fc8" transparent opacity={0.07} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
 
 function hexToRgba(hex, alpha) {
   const normalized = hex.replace("#", "");
@@ -307,9 +663,53 @@ function MagneticButton({ href, children, className, canHover, external = false 
   );
 }
 
-function TiltCard({ children, className = "", accent = "#6366f1", canHover, style, ...props }) {
+function TiltCard({
+  children,
+  className = "",
+  accent = "#6366f1",
+  canHover,
+  style,
+  intensity = 12,
+  hoverLift = -6,
+  ...props
+}) {
   const ref = useRef(null);
-  const [transform, setTransform] = useState("perspective(900px) rotateX(0deg) rotateY(0deg)");
+  const motionRef = useRef(null);
+  const frameRef = useRef(0);
+  const targetRef = useRef({ rotateX: 0, rotateY: 0, lift: 0 });
+  const currentRef = useRef({ rotateX: 0, rotateY: 0, lift: 0 });
+
+  useEffect(() => {
+    if (!motionRef.current) {
+      return undefined;
+    }
+
+    if (!canHover) {
+      motionRef.current.style.transform = "perspective(980px) rotateX(0deg) rotateY(0deg) translate3d(0,0,0)";
+      return undefined;
+    }
+
+    const animate = () => {
+      const current = currentRef.current;
+      const target = targetRef.current;
+
+      current.rotateX += (target.rotateX - current.rotateX) * 0.14;
+      current.rotateY += (target.rotateY - current.rotateY) * 0.14;
+      current.lift += (target.lift - current.lift) * 0.12;
+
+      if (motionRef.current) {
+        motionRef.current.style.transform = `perspective(980px) rotateX(${current.rotateX.toFixed(2)}deg) rotateY(${current.rotateY.toFixed(2)}deg) translate3d(0, ${current.lift.toFixed(2)}px, 0)`;
+      }
+
+      frameRef.current = window.requestAnimationFrame(animate);
+    };
+
+    frameRef.current = window.requestAnimationFrame(animate);
+
+    return () => {
+      window.cancelAnimationFrame(frameRef.current);
+    };
+  }, [canHover]);
 
   const handleMove = (event) => {
     if (!canHover || !ref.current) {
@@ -319,24 +719,35 @@ function TiltCard({ children, className = "", accent = "#6366f1", canHover, styl
     const rect = ref.current.getBoundingClientRect();
     const px = (event.clientX - rect.left) / rect.width;
     const py = (event.clientY - rect.top) / rect.height;
-    const rotateY = (px - 0.5) * 14;
-    const rotateX = (0.5 - py) * 14;
+    const rotateY = (px - 0.5) * intensity;
+    const rotateX = (0.5 - py) * intensity;
 
     ref.current.style.setProperty("--glow-x", `${(px * 100).toFixed(1)}%`);
     ref.current.style.setProperty("--glow-y", `${(py * 100).toFixed(1)}%`);
-    setTransform(`perspective(900px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`);
+    targetRef.current.rotateX = rotateX;
+    targetRef.current.rotateY = rotateY;
+    targetRef.current.lift = hoverLift;
   };
 
   return (
     <div
       ref={ref}
       className={`tilt-frame ${className}`}
-      style={{ transform, ...accentVars(accent), ...style }}
+      style={{ ...accentVars(accent), ...style }}
       onMouseMove={handleMove}
-      onMouseLeave={() => setTransform("perspective(900px) rotateX(0deg) rotateY(0deg)")}
+      onMouseEnter={() => {
+        targetRef.current.lift = hoverLift;
+      }}
+      onMouseLeave={() => {
+        targetRef.current.rotateX = 0;
+        targetRef.current.rotateY = 0;
+        targetRef.current.lift = 0;
+      }}
       {...props}
     >
-      {children}
+      <div ref={motionRef} className="tilt-motion">
+        {children}
+      </div>
     </div>
   );
 }
@@ -360,6 +771,8 @@ function ProjectCard({ project, index, canHover }) {
       className="reveal-item h-full"
       accent={project.accent}
       canHover={canHover}
+      intensity={16}
+      hoverLift={-10}
       data-reveal="true"
       style={{ "--delay": `${index * 120}ms` }}
     >
@@ -425,11 +838,69 @@ function StatCard({ stat, index, canHover }) {
   );
 }
 
+// SVG icons for contact app icon buttons
+const MailSVG = ({ size = 26 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <polyline points="2,4 12,13 22,4" />
+  </svg>
+);
+
+const GitHubSVG = ({ size = 26 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+  </svg>
+);
+
+const InstaSVG = ({ size = 26 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <circle cx="12" cy="12" r="4.5" />
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+// Frosted glass app icon component
+function AppIcon({ href, icon, label, accentColor, external = true }) {
+  return (
+    <a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noreferrer" : undefined}
+      className="app-icon-wrap"
+      data-cursor="button"
+    >
+      <div
+        className="app-icon-box"
+        style={accentColor ? { borderColor: hexToRgba(accentColor, 0.28), boxShadow: `0 8px 28px rgba(0,0,0,.35), 0 0 0 0 ${hexToRgba(accentColor, 0)}, inset 0 1px 0 rgba(255,255,255,.08)` } : {}}
+      >
+        <span style={{ color: accentColor || "rgba(240,240,245,0.88)" }}>
+          {icon}
+        </span>
+      </div>
+      <span className="app-icon-label">{label}</span>
+    </a>
+  );
+}
+
 function AdityaPortfolio() {
   const heroRef = useRef(null);
   const workRef = useRef(null);
   const skillsRef = useRef(null);
   const contactRef = useRef(null);
+  const orbMotionRef = useRef({
+    x: 0,
+    y: 0,
+    driftX: 0,
+    driftY: 0,
+    tiltX: 0,
+    tiltY: 0,
+    energy: 0.18,
+    splash: 0.06,
+    scale: 1,
+    hue: 0,
+    lastScrollY: 0
+  });
   const cursorDotRef = useRef(null);
   const cursorRingRef = useRef(null);
   const cursorRef = useRef({ dotX: 0, dotY: 0, ringX: 0, ringY: 0, targetX: 0, targetY: 0, mode: "default", visible: false });
@@ -631,6 +1102,74 @@ function AdityaPortfolio() {
   }, [canHover]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const motion = orbMotionRef.current;
+    motion.lastScrollY = window.scrollY;
+
+    const excite = (energy, splash = 0.22, scale = 1.02) => {
+      motion.energy = Math.min(1, Math.max(motion.energy, energy));
+      motion.splash = Math.min(1, Math.max(motion.splash, splash));
+      motion.scale = Math.max(motion.scale, scale);
+    };
+
+    const handlePointer = (clientX, clientY, intensity) => {
+      const xRatio = clientX / window.innerWidth - 0.5;
+      const yRatio = clientY / window.innerHeight - 0.5;
+
+      motion.x = xRatio * 0.66;
+      motion.y = yRatio * -0.42;
+      motion.driftX = xRatio * 0.22;
+      motion.driftY = yRatio * -0.18;
+      motion.tiltX = yRatio * -0.42;
+      motion.tiltY = xRatio * 0.7;
+      motion.hue = xRatio * 20 + yRatio * -12;
+      excite(0.46 + intensity * 0.34, 0.16 + intensity * 0.18, 1.01 + intensity * 0.05);
+    };
+
+    const onMouseMove = (event) => {
+      handlePointer(event.clientX, event.clientY, 0.9);
+    };
+
+    const onTouchMove = (event) => {
+      const touch = event.touches?.[0];
+      if (!touch) {
+        return;
+      }
+      handlePointer(touch.clientX, touch.clientY, 0.62);
+    };
+
+    const onScroll = () => {
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - motion.lastScrollY;
+      const velocity = Math.min(1.3, Math.abs(delta) / 22);
+      motion.lastScrollY = currentScrollY;
+
+      motion.x = Math.sin(currentScrollY * 0.0036) * (0.18 + velocity * 0.2);
+      motion.y = Math.max(-0.56, Math.min(0.34, currentScrollY * -0.00072));
+      motion.driftX = Math.cos(currentScrollY * 0.0044) * (0.06 + velocity * 0.12);
+      motion.driftY = Math.sin(currentScrollY * 0.0052) * (0.06 + velocity * 0.1);
+      motion.tiltX = Math.max(-0.42, Math.min(0.42, delta * -0.006));
+      motion.tiltY = Math.sin(currentScrollY * 0.0028) * (0.14 + velocity * 0.18);
+      motion.hue = Math.sin(currentScrollY * 0.0032) * 22 + velocity * 10;
+      excite(0.34 + velocity * 0.5, 0.12 + velocity * 0.34, 1.01 + velocity * 0.06);
+    };
+
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
@@ -666,6 +1205,7 @@ function AdityaPortfolio() {
       <style>{STYLES}</style>
       <div className="scroll-progress" style={{ "--progress": `${scrollProgress}%` }} />
       <div className="aditya-noise" />
+      <RealOrbScene motionRef={orbMotionRef} canHover={canHover} />
       <div className="orb orb-one" />
       <div className="orb orb-two" />
       <div className="orb orb-three" />
@@ -773,7 +1313,7 @@ function AdityaPortfolio() {
       <main className="relative z-10">
         <section
           ref={heroRef}
-          className="section-wrap relative flex min-h-screen items-center px-5 pb-24 pt-28 sm:px-6 lg:px-8"
+          className="section-wrap relative flex min-h-[auto] items-start px-5 pb-16 pt-24 sm:min-h-screen sm:px-6 sm:pb-24 sm:pt-28 lg:items-center lg:px-8"
         >
           <div className="mx-auto grid max-w-[var(--max)] items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="max-w-3xl">
@@ -788,7 +1328,7 @@ function AdityaPortfolio() {
                 </div>
               </div>
 
-              <div className={`mt-8 reveal-item ${heroReady ? "is-visible" : ""}`} style={{ "--delay": "160ms" }}>
+              <div className={`mt-10 sm:mt-12 reveal-item ${heroReady ? "is-visible" : ""}`} style={{ "--delay": "160ms" }}>
                 <h1 className="hero-title syne font-extrabold">
                   <span className="type-line">{lineOne || "\u00A0"}</span>
                   <span className="type-line text-gradient">
@@ -803,22 +1343,91 @@ function AdityaPortfolio() {
                   I build systems, not just code — Android, AI, ERP, Web. Based in Bhagalpur. Working globally.
                 </p>
 
-                <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
-                  <MagneticButton
+                {/* Hero CTAs */}
+                <div className="hero-cta-row mt-8 flex flex-row items-center gap-8 sm:gap-5">
+                  {/* Get in touch — frosted glass pill with mail icon */}
+                  <a
                     href="mailto:adityakumar3575@gmail.com"
-                    className="btn-base btn-primary w-full sm:w-auto"
-                    canHover={canHover}
+                    data-cursor="button"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.65rem",
+                      padding: "0.6rem 1.2rem 0.6rem 0.7rem",
+                      borderRadius: "999px",
+                      background: "rgba(255,255,255,0.05)",
+                      backdropFilter: "blur(24px)",
+                      WebkitBackdropFilter: "blur(24px)",
+                      border: "1px solid rgba(249,115,22,0.3)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)",
+                      color: "rgba(240,240,245,0.92)",
+                      textDecoration: "none",
+                      fontSize: "0.9rem",
+                      fontWeight: 500,
+                      letterSpacing: "0.01em",
+                      transition: "background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease",
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(249,115,22,0.12)";
+                      e.currentTarget.style.borderColor = "rgba(249,115,22,0.55)";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 8px 28px rgba(249,115,22,0.2), inset 0 1px 0 rgba(255,255,255,0.1)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.borderColor = "rgba(249,115,22,0.3)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)";
+                    }}
                   >
-                    Get in touch <span aria-hidden="true">→</span>
-                  </MagneticButton>
-                  <MagneticButton
+                    <span style={{
+                      width: "2rem", height: "2rem", borderRadius: "0.55rem",
+                      background: "linear-gradient(135deg,#f97316,#fb923c)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                      boxShadow: "0 2px 10px rgba(249,115,22,0.4)",
+                    }}>
+                      <MailSVG size={14} />
+                    </span>
+                    <span>Get in touch</span>
+                    <span style={{ color: "rgba(240,240,245,0.4)", fontSize: "0.8rem" }}>↗</span>
+                  </a>
+
+                  {/* GitHub — floating circle icon only */}
+                  <a
                     href="https://github.com/exor-26"
-                    external
-                    className="btn-base btn-glass w-full sm:w-auto"
-                    canHover={canHover}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-cursor="button"
+                    className="github-float"
+                    style={{
+                      width: "3rem", height: "3rem",
+                      borderRadius: "999px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                      background: "rgba(255,255,255,0.05)",
+                      backdropFilter: "blur(24px)",
+                      WebkitBackdropFilter: "blur(24px)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)",
+                      color: "rgba(240,240,245,0.82)",
+                      textDecoration: "none",
+                      transition: "background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
+                      e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)";
+                    }}
                   >
-                    GitHub
-                  </MagneticButton>
+                    <GitHubSVG size={20} />
+                  </a>
                 </div>
               </div>
             </div>
@@ -834,7 +1443,7 @@ function AdityaPortfolio() {
 
           <button
             type="button"
-            className="scroll-indicator"
+            className="scroll-indicator hidden lg:inline-flex"
             onClick={() => scrollToSection("work")}
             aria-label="Scroll to selected work"
             data-cursor="button"
@@ -893,7 +1502,8 @@ function AdityaPortfolio() {
                   data-reveal="true"
                   style={{ "--delay": `${index * 120}ms` }}
                 >
-                  <div className="counter-value">
+                  {/* Counter value now uses accent color per item */}
+                  <div className="counter-value" style={{ color: item.color }}>
                     {counters[item.key]}
                     {item.suffix}
                   </div>
@@ -904,7 +1514,7 @@ function AdityaPortfolio() {
               ))}
             </div>
 
-            <div className="glass-card reveal-item mt-8 rounded-[1.75rem] p-5 sm:p-7" data-reveal="true" style={{ "--delay": "120ms" }}>
+            <div className="glass-card reveal-item mt-8 p-5 sm:p-7" data-reveal="true" style={{ "--delay": "120ms", borderRadius: "1.75rem" }}>
               <div className="flex flex-wrap gap-3">
                 {SKILLS.map((skill) => (
                   <span key={skill} className="pill skill-chip">
@@ -914,12 +1524,13 @@ function AdityaPortfolio() {
               </div>
             </div>
 
-            <div className="cinema-card glass-card reveal-item mt-8 rounded-[2rem] p-6 sm:p-8 lg:p-10" data-reveal="true" style={{ "--delay": "180ms" }}>
+            <div className="cinema-card glass-card reveal-item mt-8 p-6 sm:p-8 lg:p-10" data-reveal="true" style={{ "--delay": "180ms", borderRadius: "2rem" }}>
               <div className="grid items-center gap-5 lg:grid-cols-[auto_1fr]">
                 <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(249,115,22,0.22),rgba(99,102,241,0.25))] text-5xl shadow-[0_12px_44px_rgba(0,0,0,0.24)] sm:h-28 sm:w-28 lg:mx-0">
                   <span aria-hidden="true">🎬</span>
                 </div>
                 <div className="space-y-4 text-center lg:text-left">
+                  {/* Cinematography: white-space nowrap prevents word split */}
                   <h3 className="cinema-title syne font-extrabold">
                     Cinematography
                   </h3>
@@ -927,14 +1538,54 @@ function AdityaPortfolio() {
                     Beyond code — I shoot and grade cinematic visuals. Creative techniques, visual storytelling.
                     See the work:
                   </p>
-                  <MagneticButton
+                  <a
                     href="https://instagram.com/exor_qz"
-                    external
-                    className="btn-base btn-primary inline-flex w-full justify-center sm:w-auto"
-                    canHover={canHover}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-cursor="button"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.65rem",
+                      padding: "0.6rem 1.1rem 0.6rem 0.7rem",
+                      borderRadius: "999px",
+                      background: "rgba(255,255,255,0.05)",
+                      backdropFilter: "blur(24px)",
+                      WebkitBackdropFilter: "blur(24px)",
+                      border: "1px solid rgba(168,85,247,0.28)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)",
+                      color: "rgba(240,240,245,0.92)",
+                      textDecoration: "none",
+                      fontSize: "0.9rem",
+                      fontWeight: 500,
+                      letterSpacing: "0.01em",
+                      transition: "background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(168,85,247,0.14)";
+                      e.currentTarget.style.borderColor = "rgba(168,85,247,0.55)";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 8px 28px rgba(168,85,247,0.22), inset 0 1px 0 rgba(255,255,255,0.1)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.borderColor = "rgba(168,85,247,0.28)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)";
+                    }}
                   >
-                    @exor_qz
-                  </MagneticButton>
+                    <span style={{
+                      width: "2rem", height: "2rem", borderRadius: "0.55rem",
+                      background: "linear-gradient(135deg,#f97316,#a855f7)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                      boxShadow: "0 2px 10px rgba(168,85,247,0.35)"
+                    }}>
+                      <InstaSVG size={14} />
+                    </span>
+                    <span>@exor_qz</span>
+                    <span style={{ color: "rgba(240,240,245,0.4)", fontSize: "0.8rem" }}>↗</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -950,30 +1601,27 @@ function AdityaPortfolio() {
                 Clear scope. Proper agreement. Clean execution. No guesswork, no free demos — just real work.
               </p>
 
-              <div className="mt-10 flex flex-col items-stretch justify-center gap-4 lg:flex-row">
-                <MagneticButton
+              {/* Frosted glass app icon buttons — always horizontal row */}
+              <div className="app-icon-row">
+                <AppIcon
                   href="mailto:adityakumar3575@gmail.com"
-                  className="btn-base btn-primary w-full lg:w-auto"
-                  canHover={canHover}
-                >
-                  ✉ adityakumar3575@gmail.com
-                </MagneticButton>
-                <MagneticButton
+                  icon={<MailSVG />}
+                  label="Email"
+                  accentColor="#f97316"
+                  external={false}
+                />
+                <AppIcon
                   href="https://github.com/exor-26"
-                  external
-                  className="btn-base btn-glass w-full lg:w-auto"
-                  canHover={canHover}
-                >
-                  github.com/exor-26
-                </MagneticButton>
-                <MagneticButton
+                  icon={<GitHubSVG size={26} />}
+                  label="GitHub"
+                  accentColor="rgba(240,240,245,0.88)"
+                />
+                <AppIcon
                   href="https://instagram.com/exor_qz"
-                  external
-                  className="btn-base btn-glass w-full lg:w-auto"
-                  canHover={canHover}
-                >
-                  @exor_qz Instagram
-                </MagneticButton>
+                  icon={<InstaSVG />}
+                  label="Instagram"
+                  accentColor="#a855f7"
+                />
               </div>
             </div>
           </div>
