@@ -1,1641 +1,257 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
-
-const NAV_ITEMS = [
-  { id: "work", label: "Work" },
-  { id: "skills", label: "Skills" },
-  { id: "contact", label: "Contact" }
-];
-
-const HERO_STATS = [
-  { value: "5+", label: "Production Projects" },
-  { value: "3+", label: "Domains Covered" },
-  { value: "22", label: "Years Old, Building Real Things" }
-];
-
-const PROJECTS = [
+const projects = [
   {
+    number: "01",
+    visual: "cinestream",
     name: "CineStream",
-    accent: "#f97316",
-    tag: "Android · Media",
+    category: "Android application",
+    status: "On Google Play · Open source",
     description:
-      "19MB video player with FFmpeg software decoding, EAC3/AC3, gesture controls, subtitles — 25% faster load than market alternatives. Lighter than anything on the market.",
-    tech: ["Android", "ExoPlayer", "FFmpeg", "Java"],
-    link: "https://github.com/exor-26/CineStream"
+      "A free, offline video player for Android. It brings device videos into a searchable MediaStore library and uses Media3 playback with an on-device FFmpeg fallback for difficult files.",
+    detail:
+      "Playback resume, audio and subtitle selection, gesture controls, picture-in-picture, and file management are built around modern Android storage rules.",
+    technologies: ["Java", "Android", "Media3", "FFmpeg"],
+    links: [
+      {
+        label: "Google Play",
+        href: "https://play.google.com/store/apps/details?id=com.exor.cinestream",
+        primary: true,
+      },
+      {
+        label: "Source code",
+        href: "https://github.com/exor-26/CineStream",
+      },
+    ],
   },
   {
-    name: "TBUS",
-    accent: "#6366f1",
-    tag: "Android · FinTech",
+    number: "02",
+    visual: "kiepl",
+    name: "KIEPL ERP–CRM",
+    category: "Internal business platform",
+    status: "Live client system · Contract",
     description:
-      "End-to-end bus booking platform. RedBus alternative charging owners 5–10% only — zero user fees. Firebase, Razorpay, Google Auth, offline mode.",
-    tech: ["Android", "Firebase", "Razorpay", "Google Auth"],
-    link: "https://github.com/exor-26/TBUS"
+      "An internal operations platform for KIEPL, bringing employee records, attendance, leave, payments, vendors, and purchase orders into role-specific workflows.",
+    detail:
+      "Its API verifies Firebase identity and App Check tokens, applies server-side role checks, and denies direct client access to Firestore data. Selected actions also use request throttling.",
+    technologies: ["Firebase", "Cloud Functions", "Role-based access", "Web"],
+    links: [
+      {
+        label: "Company website",
+        href: "https://kiepl.co",
+      },
+    ],
+    note: "The ERP–CRM and its source are private client systems.",
   },
   {
-    name: "KIEPL Portal",
-    accent: "#10b981",
-    tag: "Web · ERP",
+    number: "03",
+    visual: "cardbox",
+    name: "CardBox",
+    category: "Service marketplace",
+    status: "Client platform · In development",
     description:
-      "Full internal ERP replacing complete paperwork. Role-based access: HR, Admin, Engineers. Attendance, OT, payments, records — all in one system.",
-    tech: ["HTML", "CSS", "JavaScript", "Role-based Auth"],
-    link: "https://kiepl.co"
+      "A multi-profession service platform spanning consumer and admin Android apps, a web client, and a PHP/MySQL API for provider discovery, booking, and operational workflows.",
+    detail:
+      "Voice-led discovery combines on-device speech input, model-assisted intent classification, and deterministic fallback before server-side routing. Model calls have time and output limits to control cost and latency.",
+    technologies: ["React Native", "PHP", "MySQL", "Voice discovery"],
+    links: [],
+    note: "Built through the Star Photo Lab company repository; source access is private.",
   },
-  {
-    name: "AI WhatsApp Agent",
-    accent: "#a855f7",
-    tag: "AI · Local LLM",
-    description:
-      "Offline human-level WhatsApp agent. Qwen 2.5 3B running fully local — zero cloud. Smart takeover on inactivity, steps back when you re-engage.",
-    tech: ["Qwen 2.5", "Local LLM", "Python"],
-    link: "https://github.com/exor-26/wa-agent"
-  },
-  {
-    name: "Protected Course",
-    accent: "#ef4444",
-    tag: "Private · Course",
-    description:
-      "A locked AI learning area with manual access, device binding, timed sessions, progressive unlocks, and rights-protected lessons.",
-    tech: ["React", "Firestore", "Netlify Functions"],
-    link: "/course"
-  }
 ];
 
-const SKILLS = [
-  "Android Development",
-  "Firebase",
-  "ExoPlayer",
-  "FFmpeg",
-  "AI Integration",
-  "Local LLM",
-  "Qwen 2.5",
-  "Real-time Systems",
-  "React JSX",
-  "Tailwind",
-  "API Development",
-  "UI/UX Design",
-  "Payment Gateways",
-  "Role-based Auth",
-  "Web Technologies",
-  "ERP Systems"
-];
-
-const MARQUEE_ROWS = [
-  [
-    "Android Development",
-    "Firebase",
-    "ExoPlayer",
-    "FFmpeg",
-    "AI Integration",
-    "Local LLM",
-    "Qwen 2.5",
-    "Real-time Systems"
-  ],
-  [
-    "React JSX",
-    "Tailwind",
-    "API Development",
-    "UI/UX Design",
-    "Payment Gateways",
-    "Role-based Auth",
-    "Web Technologies",
-    "ERP Systems"
-  ]
-];
-
-// Added color field to each counter target
-const COUNTER_TARGETS = [
-  { key: "projects", label: "Projects", value: 5, suffix: "+", color: "#f97316" },
-  { key: "domains", label: "Domains", value: 3, suffix: "+", color: "#6366f1" },
-  { key: "philosophy", label: "Architecture Philosophy", value: 1, suffix: "", color: "#a855f7" }
-];
-
-const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap');
-.aditya-portfolio{--bg:#080810;--text:#f0f0f5;--muted:#6b6b80;--orange:#f97316;--indigo:#6366f1;--max:1480px;position:relative;min-height:100vh;overflow-x:clip;background:radial-gradient(circle at top left,rgba(99,102,241,.06),transparent 35%),radial-gradient(circle at bottom right,rgba(249,115,22,.05),transparent 30%),#080810;color:var(--text);font-family:'DM Sans',sans-serif}
-.aditya-portfolio *{box-sizing:border-box}
-.aditya-portfolio a,.aditya-portfolio button{-webkit-tap-highlight-color:transparent}
-@media (hover:hover) and (pointer:fine){.aditya-portfolio,.aditya-portfolio *{cursor:none!important}}
-.aditya-noise{position:fixed;inset:0;pointer-events:none;opacity:.035;mix-blend-mode:soft-light;z-index:3;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
-.liquid-orb-shell{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden}
-.liquid-orb-shell::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 79% 28%,rgba(249,115,22,.12),transparent 10%),radial-gradient(circle at 76% 30%,rgba(99,102,241,.13),transparent 14%),radial-gradient(circle at 72% 35%,rgba(168,85,247,.1),transparent 20%);filter:blur(42px);opacity:.62}
-.liquid-orb-shell::after{content:"";position:absolute;left:61%;right:10%;top:17%;bottom:39%;border-radius:50%;background:radial-gradient(circle,rgba(8,8,16,.3),transparent 68%);filter:blur(40px);opacity:.4}
-.liquid-orb-canvas{position:absolute;inset:0;overflow:hidden}
-.liquid-orb-canvas canvas{width:100%!important;height:100%!important}
-.liquid-orb-veil{position:absolute;inset:0;background:radial-gradient(circle at 80% 28%,rgba(255,255,255,.03),transparent 4%),radial-gradient(circle at 78% 30%,rgba(249,115,22,.1),transparent 9%),radial-gradient(circle at 75% 33%,rgba(99,102,241,.12),transparent 13%),radial-gradient(circle at 72% 36%,rgba(168,85,247,.09),transparent 17%);filter:blur(36px);mix-blend-mode:screen;opacity:.38}
-.orb{position:fixed;border-radius:999px;filter:blur(80px);pointer-events:none;z-index:1;opacity:.09;animation:drift 14s ease-in-out infinite alternate}
-.orb-one{top:8%;left:-8%;width:clamp(15rem,30vw,28rem);height:clamp(15rem,30vw,28rem);background:radial-gradient(circle,rgba(249,115,22,.9),transparent 70%)}
-.orb-two{top:38%;right:-10%;width:clamp(16rem,32vw,30rem);height:clamp(16rem,32vw,30rem);background:radial-gradient(circle,rgba(99,102,241,.9),transparent 68%);animation-duration:12s}
-.orb-three{bottom:4%;left:35%;width:clamp(14rem,26vw,24rem);height:clamp(14rem,26vw,24rem);background:radial-gradient(circle,rgba(168,85,247,.85),transparent 72%);animation-duration:15s}
-.scroll-progress{position:fixed;top:0;left:0;height:2px;width:var(--progress,0%);z-index:60;background:linear-gradient(90deg,#f97316,#6366f1);box-shadow:0 0 24px rgba(99,102,241,.45)}
-.glass-card{position:relative;overflow:hidden;background:rgba(255,255,255,.04);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06)}
-.glass-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at top left,rgba(255,255,255,.08),transparent 40%),linear-gradient(180deg,rgba(255,255,255,.02),transparent 35%)}
-.syne{font-family:'Syne',sans-serif}
-.text-gradient{background:linear-gradient(90deg,#f97316,#fb7185,#6366f1);background-size:200% 200%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradientShift 6s ease infinite}
-.section-wrap{position:relative;isolation:isolate}
-.section-wrap::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(40rem circle at var(--spot-x,50%) var(--spot-y,50%),rgba(249,115,22,.05),transparent 45%);opacity:var(--spot-opacity,0);transition:opacity .18s ease}
-.hero-tag{display:inline-flex;align-items:center;gap:.75rem;border-radius:999px;padding:.7rem 1rem;font-size:.92rem;letter-spacing:.01em;color:rgba(240,240,245,.94)}
-.pulse-dot,.status-dot{width:.6rem;height:.6rem;border-radius:999px;flex:none}
-.pulse-dot{background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.55);animation:pulse 1.8s ease infinite}
-.status-dot{background:#f97316;box-shadow:0 0 18px rgba(249,115,22,.55)}
-.hero-title{font-size:clamp(2.5rem,8vw,6rem);line-height:.92;letter-spacing:-.05em;min-height:clamp(5.4rem,12vw,11rem)}
-.type-line{display:block}
-.type-caret{display:inline-block;width:.08em;height:.95em;margin-left:.12em;border-radius:999px;vertical-align:-.08em;background:rgba(240,240,245,.82);animation:blink 1s steps(1,end) infinite}
-.hero-copy{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
-.hero-copy.is-visible{opacity:1;transform:translateY(0)}
-.hero-subtitle{max-width:38rem;color:rgba(240,240,245,.78);font-size:clamp(1rem,1.4vw,1.15rem);line-height:1.75}
-.hero-cta-row{position:relative;z-index:1}
-.btn-base{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:.7rem;border-radius:999px;padding:.95rem 1.35rem;font-size:.96rem;font-weight:600;letter-spacing:.01em;transition:transform .18s ease,background .24s ease,border-color .24s ease,box-shadow .24s ease;will-change:transform}
-.btn-primary{background:linear-gradient(135deg,rgba(249,115,22,1),rgba(251,146,60,.96));color:#fff7ed;box-shadow:0 14px 44px rgba(249,115,22,.28)}
-.btn-glass{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06)}
-.tilt-frame{transition:box-shadow .22s ease;will-change:box-shadow}
-.tilt-motion{transform-style:preserve-3d;transform-origin:center center;will-change:transform}
-.tilt-depth{transform:translateZ(26px)}
-.scroll-indicator{position:absolute;left:50%;bottom:1.6rem;transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;width:2.6rem;height:2.6rem;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);backdrop-filter:blur(20px);animation:bounce 2.2s ease infinite}
-.marquee-shell{position:relative;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 92%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 8%,#000 92%,transparent 100%)}
-.marquee-track{display:flex;width:max-content;gap:1rem;animation:marquee 30s linear infinite}
-.marquee-row[data-direction="reverse"] .marquee-track{animation-name:marqueeReverse}
-.marquee-row:hover .marquee-track{animation-play-state:paused}
-.pill{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border-radius:999px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:rgba(240,240,245,.74);padding:.7rem 1rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
-.section-kicker{color:rgba(249,115,22,.92);font-size:.78rem;letter-spacing:.35em;text-transform:uppercase}
-.section-title{font-size:clamp(2rem,4vw,3.75rem);line-height:1;letter-spacing:-.05em}
-.reveal-item{opacity:0;transform:translateY(30px);transition:opacity .7s cubic-bezier(.2,1,.22,1),transform .7s cubic-bezier(.2,1,.22,1);transition-delay:var(--delay,0ms)}
-.reveal-item.is-visible{opacity:1;transform:translateY(0)}
-.project-card{position:relative;min-height:24rem;padding:1.5rem;border-top:3px solid var(--accent);border-radius:1.5rem;transform-style:preserve-3d;box-shadow:0 10px 40px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.06)}
-.project-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 20% 0%,var(--accent-soft),transparent 45%),radial-gradient(circle at var(--glow-x,50%) var(--glow-y,50%),var(--accent-mid),transparent 32%)}
-.project-card:hover{box-shadow:0 20px 52px rgba(0,0,0,.4),0 0 36px var(--accent-glow),inset 0 1px 0 rgba(255,255,255,.08)}
-.project-link{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:2.75rem;height:2.75rem;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:var(--text);background:rgba(255,255,255,.04);transition:background .22s ease,color .22s ease,border-color .22s ease,transform .22s ease}
-.project-link:hover{background:var(--accent);border-color:var(--accent);color:#fff;transform:translateY(-2px)}
-.skill-chip{transition:transform .18s ease,box-shadow .22s ease,border-color .22s ease}
-.skill-chip:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.18);box-shadow:0 12px 26px rgba(0,0,0,.26)}
-.cinema-card{background:radial-gradient(circle at 8% 20%,rgba(249,115,22,.14),transparent 24%),radial-gradient(circle at 85% 80%,rgba(99,102,241,.12),transparent 28%),rgba(255,255,255,.04)}
-.cinema-title{font-size:clamp(1.3rem,6vw,2.5rem);line-height:.92;letter-spacing:-.05em;white-space:nowrap}
-.cinema-copy{max-width:34rem;margin-inline:auto}
-.counter-card{text-align:center;padding:1.5rem;border-radius:1.5rem}
-.counter-value{font-family:'Syne',sans-serif;font-size:clamp(2rem,4vw,3.25rem);line-height:1;letter-spacing:-.05em}
-.contact-card{padding:clamp(1.5rem,4vw,4rem);border-radius:2rem;background:radial-gradient(circle at 15% 20%,rgba(249,115,22,.12),transparent 24%),radial-gradient(circle at 80% 80%,rgba(99,102,241,.12),transparent 28%),rgba(255,255,255,.04)}
-.footer-copy{color:rgba(240,240,245,.64);font-size:.95rem}
-.cursor-dot,.cursor-ring{position:fixed;top:0;left:0;pointer-events:none;z-index:80;border-radius:999px;opacity:0;transition:width .18s ease,height .18s ease,border-color .18s ease,background .18s ease,opacity .18s ease;will-change:transform}
-.cursor-dot{width:6px;height:6px;background:#f0f0f5;box-shadow:0 0 18px rgba(240,240,245,.65)}
-.cursor-ring{width:32px;height:32px;border:1px solid rgba(240,240,245,.45);display:flex;align-items:center;justify-content:center;color:rgba(240,240,245,.9);font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;backdrop-filter:blur(10px)}
-.cursor-ring.is-active,.cursor-dot.is-active{opacity:1}
-.cursor-ring.mode-button{width:48px;height:48px;background:rgba(249,115,22,.2);border-color:rgba(249,115,22,.55)}
-.cursor-ring.mode-project{width:56px;height:56px;background:rgba(99,102,241,.14);border-color:rgba(99,102,241,.44)}
-.cursor-dot.is-hidden{opacity:0!important}
-.mobile-menu{position:fixed;inset:0;z-index:55;padding:6rem 1.5rem 2rem;background:radial-gradient(circle at top,rgba(99,102,241,.14),transparent 32%),rgba(8,8,16,.92);backdrop-filter:blur(24px);transform:translateY(-100%);transition:transform .32s ease}
-.mobile-menu.is-open{transform:translateY(0)}
-.mobile-menu-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:2rem}
-.mobile-close{display:inline-flex;align-items:center;justify-content:center;width:3rem;height:3rem;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#f0f0f5;font-size:1.35rem;line-height:1;backdrop-filter:blur(16px)}
-.nav-link{position:relative;color:rgba(240,240,245,.72);transition:color .18s ease}
-.nav-link:hover,.nav-link.is-active{color:#fff}
-.nav-link.is-active::after{content:"";position:absolute;left:50%;bottom:-.65rem;width:.4rem;height:.4rem;transform:translateX(-50%);border-radius:999px;background:var(--orange);box-shadow:0 0 18px rgba(249,115,22,.7)}
-.menu-button{width:3rem;height:3rem;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);backdrop-filter:blur(16px)}
-.menu-button{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:.34rem;padding:.7rem}
-.menu-button span{display:block;height:2px;border-radius:999px;background:#f0f0f5;transition:transform .18s ease,width .18s ease,opacity .18s ease}
-.menu-button span:nth-child(1){width:1.55rem}
-.menu-button span:nth-child(2){width:1.15rem}
-.menu-button.is-open span:nth-child(1){width:1.4rem;transform:translateY(4px) rotate(45deg)}
-.menu-button.is-open span:nth-child(2){width:1.4rem;transform:translateY(-4px) rotate(-45deg)}
-/* App icon contact buttons */
-.app-icon-row{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;margin-top:2.5rem}
-.app-icon-wrap{display:inline-flex;flex-direction:column;align-items:center;gap:.65rem;text-decoration:none;color:var(--text);transition:transform .2s ease}
-.app-icon-wrap:hover{transform:translateY(-5px)}
-.app-icon-box{width:4.25rem;height:4.25rem;border-radius:1.3rem;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.10);box-shadow:0 8px 28px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);transition:background .22s ease,box-shadow .22s ease,border-color .22s ease}
-.app-icon-wrap:hover .app-icon-box{background:rgba(255,255,255,.10);box-shadow:0 14px 36px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)}
-.app-icon-label{font-size:.76rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:rgba(240,240,245,.6)}
-@keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-@keyframes blink{50%{opacity:0}}
-@keyframes pulse{70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-@keyframes drift{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(3rem,-2rem,0) scale(1.08)}}
-@keyframes blobFloat{0%{transform:translate3d(0,0,0) rotate(0deg)}33%{transform:translate3d(8px,-10px,0) rotate(6deg)}66%{transform:translate3d(-10px,6px,0) rotate(-5deg)}100%{transform:translate3d(0,0,0) rotate(0deg)}}
-@keyframes bounce{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-10px)}}
-@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-@keyframes marqueeReverse{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
-@keyframes tintDrift{0%{transform:translate3d(0,0,0) rotate(0deg)}50%{transform:translate3d(-4px,6px,0) rotate(8deg)}100%{transform:translate3d(0,0,0) rotate(0deg)}}
-@keyframes floatOrbit{0%{transform:translate(0px,0px) rotate(0deg)}20%{transform:translate(4px,-6px) rotate(4deg)}45%{transform:translate(-5px,-3px) rotate(-3deg)}65%{transform:translate(3px,5px) rotate(2deg)}80%{transform:translate(-4px,3px) rotate(-5deg)}100%{transform:translate(0px,0px) rotate(0deg)}}
-.github-float{animation:floatOrbit 6s ease-in-out infinite;will-change:transform}
-@media (max-width:1023px){.hero-title{min-height:auto}}
-@media (min-width:1024px){.menu-button{display:none!important}.project-card{min-height:26rem}}
-@media (max-width:639px){.hero-title{font-size:clamp(2.5rem,10vw,3.5rem)}.project-card{min-height:auto}.marquee-shell{-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 12%,#000 88%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 12%,#000 88%,transparent 100%)}.cinema-card{padding:1.35rem}.app-icon-row{gap:1.5rem}.hero-copy{padding-bottom:6.25rem}.scroll-indicator{bottom:1.35rem}.liquid-orb-shell::before{background:radial-gradient(circle at 82% 24%,rgba(249,115,22,.09),transparent 9%),radial-gradient(circle at 79% 27%,rgba(99,102,241,.11),transparent 13%),radial-gradient(circle at 75% 31%,rgba(168,85,247,.08),transparent 17%)}.liquid-orb-shell::after{left:60%;right:8%;top:16%;bottom:50%}.liquid-orb-veil{background:radial-gradient(circle at 82% 24%,rgba(255,255,255,.02),transparent 4%),radial-gradient(circle at 79% 27%,rgba(249,115,22,.08),transparent 7%),radial-gradient(circle at 76% 30%,rgba(99,102,241,.09),transparent 11%),radial-gradient(circle at 73% 34%,rgba(168,85,247,.07),transparent 15%)}} 
-@media (min-width:1024px){.cinema-copy{margin-inline:0}}
-@media (hover:none),(pointer:coarse){.tilt-frame{transform:none!important}.cursor-dot,.cursor-ring{display:none!important}}
-`;
-
-const titleSource = "Software\nArchitect";
-
-const ORB_VERTEX_SHADER = `
-varying vec3 vNormal;
-varying vec3 vWorldPosition;
-varying vec3 vPosition;
-
-void main() {
-  vNormal = normalize(normalMatrix * normal);
-  vPosition = position;
-  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-  vWorldPosition = worldPosition.xyz;
-  gl_Position = projectionMatrix * viewMatrix * worldPosition;
-}
-`;
-
-const ORB_FRAGMENT_SHADER = `
-uniform float uTime;
-uniform float uEnergy;
-uniform float uHueShift;
-uniform float uBrightness;
-
-varying vec3 vNormal;
-varying vec3 vWorldPosition;
-varying vec3 vPosition;
-
-float hash(vec3 p) {
-  p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
-  p *= 17.0;
-  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-}
-
-float noise(vec3 p) {
-  vec3 i = floor(p);
-  vec3 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-
-  return mix(
-    mix(
-      mix(hash(i + vec3(0.0, 0.0, 0.0)), hash(i + vec3(1.0, 0.0, 0.0)), f.x),
-      mix(hash(i + vec3(0.0, 1.0, 0.0)), hash(i + vec3(1.0, 1.0, 0.0)), f.x),
-      f.y
-    ),
-    mix(
-      mix(hash(i + vec3(0.0, 0.0, 1.0)), hash(i + vec3(1.0, 0.0, 1.0)), f.x),
-      mix(hash(i + vec3(0.0, 1.0, 1.0)), hash(i + vec3(1.0, 1.0, 1.0)), f.x),
-      f.y
-    ),
-    f.z
-  );
-}
-
-float fbm(vec3 p) {
-  float value = 0.0;
-  float amplitude = 0.5;
-  for (int i = 0; i < 5; i++) {
-    value += amplitude * noise(p);
-    p *= 2.03;
-    amplitude *= 0.5;
-  }
-  return value;
-}
-
-void main() {
-  vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-  vec3 normal = normalize(vNormal);
-  vec3 spherePos = normalize(vPosition);
-
-  float huePhase = uHueShift * 0.015;
-  float flowA = fbm(spherePos * 3.0 + vec3(huePhase, uTime * 0.18, -uTime * 0.12));
-  float flowB = fbm(spherePos.yzx * 4.4 + vec3(-uTime * 0.11, huePhase * 0.8, uTime * 0.16));
-  float flowC = fbm(spherePos.zxy * 5.1 - vec3(uTime * 0.13, -uTime * 0.1, huePhase));
-  float flowD = fbm((spherePos + vec3(flowA, flowC, flowB)) * 6.0 + uTime * 0.08);
-
-  vec3 orange = vec3(0.98, 0.46, 0.16);
-  vec3 magenta = vec3(0.94, 0.34, 0.78);
-  vec3 indigo = vec3(0.38, 0.44, 0.98);
-  vec3 violet = vec3(0.69, 0.43, 0.94);
-
-  vec3 drift = vec3(
-    (flowA - 0.5) * 0.16,
-    (flowB - 0.5) * 0.16,
-    (flowC - 0.5) * 0.16
-  );
-
-  float orangeMask = pow(clamp(1.0 - distance(spherePos + drift * 0.35, normalize(vec3(-0.58, 0.28, 0.22))) / 1.32, 0.0, 1.0), 2.2);
-  float magentaMask = pow(clamp(1.0 - distance(spherePos - drift * 0.28, normalize(vec3(0.12, -0.18, 0.62))) / 1.28, 0.0, 1.0), 2.0);
-  float indigoMask = pow(clamp(1.0 - distance(spherePos + drift * 0.22, normalize(vec3(0.64, 0.12, -0.08))) / 1.34, 0.0, 1.0), 2.1);
-  float violetMask = pow(clamp(1.0 - distance(spherePos - drift * 0.18, normalize(vec3(-0.06, 0.7, -0.2))) / 1.42, 0.0, 1.0), 1.8);
-
-  vec3 color =
-    orange * (0.18 + orangeMask * 0.42) +
-    magenta * (0.44 + magentaMask * 0.98) +
-    indigo * (0.38 + indigoMask * 0.86) +
-    violet * (0.28 + violetMask * 0.58);
-
-  float innerCloud = fbm((spherePos + vec3(flowB, flowC, flowA)) * 7.2 - uTime * 0.04);
-  color *= 0.84 + innerCloud * 0.24;
-  color += mix(magenta, indigo, 0.48) * pow(max(innerCloud - 0.58, 0.0), 1.6) * 0.28;
-
-  float coreGlow = 1.0 - smoothstep(0.0, 0.94, length(vPosition));
-  float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.2);
-  float sheen = pow(max(dot(reflect(-viewDir, normal), vec3(-0.18, 0.74, 1.0)), 0.0), 24.0);
-  float innerRim = pow(1.0 - abs(dot(normal, viewDir)), 5.0);
-
-  color *= 0.8 + coreGlow * (1.04 + uEnergy * 0.24);
-  color += mix(magenta, indigo, 0.52) * innerRim * 0.22;
-  color += mix(violet, magenta, 0.54) * sheen * (0.06 + uEnergy * 0.025);
-  color += vec3(0.06, 0.05, 0.14) * fresnel * 0.1;
-  color *= 1.02 + uBrightness;
-
-  float alpha = 0.7 + coreGlow * 0.2;
-  gl_FragColor = vec4(color, alpha);
-}
-`;
-
-function RealOrbScene({ motionRef, canHover }) {
-  return (
-    <div className="liquid-orb-shell" aria-hidden="true">
-      <div className="liquid-orb-veil" />
-      <div className="liquid-orb-canvas">
-        <Canvas
-          dpr={canHover ? [1, 1.8] : [1, 1.3]}
-          camera={{ position: [0, 0, 7], fov: 34 }}
-          gl={{ antialias: true, alpha: true }}
-        >
-          <ambientLight intensity={0.2} />
-          <hemisphereLight args={["#c6b8ff", "#060811", 0.4]} />
-          <directionalLight position={[2.4, 2.8, 5]} intensity={0.34} color="#d9ccff" />
-          <pointLight position={[-2.8, 1.5, 3.2]} intensity={7} distance={9} color="#f97316" />
-          <pointLight position={[2.8, -0.8, 3.1]} intensity={10} distance={9} color="#6366f1" />
-          <pointLight position={[0.35, 0.7, 2.4]} intensity={11} distance={6} color="#ec4899" />
-          <WaterOrb motionRef={motionRef} />
-        </Canvas>
-      </div>
-    </div>
-  );
-}
-
-function WaterOrb({ motionRef }) {
-  const groupRef = useRef(null);
-  const shellGroupRef = useRef(null);
-  const shellRef = useRef(null);
-  const innerRef = useRef(null);
-  const coreRef = useRef(null);
-  const haloRef = useRef(null);
-  const stateRef = useRef({
-    x: 0,
-    y: 0,
-    driftX: 0,
-    driftY: 0,
-    tiltX: 0,
-    tiltY: 0,
-    energy: 0.12,
-    splash: 0,
-    scale: 1,
-    hue: 0
-  });
-
-  useFrame((renderState, delta) => {
-    const target = motionRef.current;
-    const current = stateRef.current;
-    const elapsed = renderState.clock.elapsedTime;
-    const { width, height } = renderState.viewport;
-    const isPhone = width < 7;
-    const baseX = isPhone ? width * 0.42 : width * 0.31;
-    const baseY = isPhone ? height * 0.19 : height * 0.16;
-    const baseScale = isPhone ? 0.72 : 0.92;
-
-    target.energy = THREE.MathUtils.lerp(target.energy, 0.14, 0.018);
-    target.splash = THREE.MathUtils.lerp(target.splash, 0.04, 0.04);
-    target.scale = THREE.MathUtils.lerp(target.scale, 1, 0.03);
-    target.hue = THREE.MathUtils.lerp(target.hue, 0, 0.025);
-
-    current.x = THREE.MathUtils.lerp(current.x, target.x, 0.055);
-    current.y = THREE.MathUtils.lerp(current.y, target.y, 0.055);
-    current.driftX = THREE.MathUtils.lerp(current.driftX, target.driftX, 0.06);
-    current.driftY = THREE.MathUtils.lerp(current.driftY, target.driftY, 0.06);
-    current.tiltX = THREE.MathUtils.lerp(current.tiltX, target.tiltX, 0.08);
-    current.tiltY = THREE.MathUtils.lerp(current.tiltY, target.tiltY, 0.08);
-    current.energy = THREE.MathUtils.lerp(current.energy, target.energy, 0.08);
-    current.splash = THREE.MathUtils.lerp(current.splash, target.splash, 0.08);
-    current.scale = THREE.MathUtils.lerp(current.scale, target.scale, 0.06);
-    current.hue = THREE.MathUtils.lerp(current.hue, target.hue, 0.06);
-
-    const bobX = Math.sin(elapsed * 0.38) * 0.08;
-    const bobY = Math.cos(elapsed * 0.52) * 0.09;
-    const scale = (current.scale + current.energy * 0.03) * baseScale;
-
-    if (groupRef.current) {
-      groupRef.current.position.x = baseX + current.x + current.driftX + bobX;
-      groupRef.current.position.y = baseY + current.y + current.driftY + bobY;
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(
-        groupRef.current.rotation.x,
-        current.tiltX + Math.sin(elapsed * 0.31) * 0.05,
-        0.08
-      );
-      groupRef.current.rotation.y += delta * (0.2 + current.energy * 0.45);
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(
-        groupRef.current.rotation.z,
-        current.tiltY * 0.5 + Math.cos(elapsed * 0.28) * 0.03,
-        0.06
-      );
-      groupRef.current.scale.setScalar(scale);
-    }
-
-    if (shellGroupRef.current) {
-      shellGroupRef.current.scale.set(
-        1 + Math.sin(elapsed * 0.34) * 0.012,
-        1 + Math.cos(elapsed * 0.28) * 0.012,
-        1
-      );
-    }
-
-    if (shellRef.current) {
-      shellRef.current.material.thickness = 1.15 + current.energy * 0.7;
-      shellRef.current.material.iridescence = 0.52 + current.energy * 0.26;
-      shellRef.current.material.attenuationDistance = 0.72 + (1 - current.energy) * 0.32;
-      shellRef.current.material.color.setHSL(0.72 + current.hue * 0.0002, 0.1, 0.72);
-      shellRef.current.material.opacity = 0.22 + current.energy * 0.04;
-    }
-
-    if (haloRef.current) {
-      haloRef.current.material.opacity = 0.035 + current.energy * 0.025;
-      haloRef.current.scale.setScalar(1.34 + current.energy * 0.08);
-    }
-
-    if (innerRef.current) {
-      innerRef.current.material.uniforms.uTime.value = elapsed;
-      innerRef.current.material.uniforms.uEnergy.value = current.energy;
-      innerRef.current.material.uniforms.uHueShift.value = current.hue;
-      innerRef.current.material.uniforms.uBrightness.value = 0.14;
-      innerRef.current.rotation.y -= delta * (0.16 + current.energy * 0.18);
-      innerRef.current.rotation.x += delta * 0.08;
-      innerRef.current.scale.set(
-        0.88 + current.splash * 0.06,
-        0.84 - current.splash * 0.03,
-        0.88
-      );
-    }
-
-    if (coreRef.current) {
-      coreRef.current.material.uniforms.uTime.value = elapsed * 1.2 + 12;
-      coreRef.current.material.uniforms.uEnergy.value = current.energy * 1.08;
-      coreRef.current.material.uniforms.uHueShift.value = current.hue * 0.8;
-      coreRef.current.material.uniforms.uBrightness.value = 0.28;
-      coreRef.current.rotation.y += delta * (0.26 + current.energy * 0.32);
-      coreRef.current.rotation.z -= delta * 0.07;
-      coreRef.current.scale.set(
-        0.66 + current.splash * 0.08,
-        0.62 - current.splash * 0.04,
-        0.66
-      );
-    }
-  });
-
-  return (
-    <group ref={groupRef}>
-      <mesh ref={haloRef} scale={1.44} position={[0, 0, -0.5]}>
-        <sphereGeometry args={[1, 64, 64]} />
-        <meshBasicMaterial
-          color="#ff8a3d"
-          transparent
-          opacity={0.1}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
-
-      <mesh ref={innerRef} scale={0.88}>
-        <sphereGeometry args={[1, 128, 128]} />
-        <shaderMaterial
-          vertexShader={ORB_VERTEX_SHADER}
-          fragmentShader={ORB_FRAGMENT_SHADER}
-          uniforms={{
-            uTime: { value: 0 },
-            uEnergy: { value: 0.2 },
-            uHueShift: { value: 0 },
-            uBrightness: { value: 0.12 }
-          }}
-          transparent
-          depthWrite={false}
-          side={THREE.BackSide}
-        />
-      </mesh>
-
-      <mesh ref={coreRef} scale={0.66}>
-        <sphereGeometry args={[1, 96, 96]} />
-        <shaderMaterial
-          vertexShader={ORB_VERTEX_SHADER}
-          fragmentShader={ORB_FRAGMENT_SHADER}
-          uniforms={{
-            uTime: { value: 0 },
-            uEnergy: { value: 0.24 },
-            uHueShift: { value: 0 },
-            uBrightness: { value: 0.22 }
-          }}
-          transparent
-          depthWrite={false}
-        />
-      </mesh>
-
-      <group ref={shellGroupRef}>
-        <mesh ref={shellRef}>
-          <sphereGeometry args={[1, 128, 128]} />
-          <meshPhysicalMaterial
-            transparent
-            opacity={0.24}
-            roughness={0.03}
-            metalness={0}
-            transmission={1}
-            thickness={1.15}
-            ior={1.33}
-            clearcoat={1}
-            clearcoatRoughness={0.015}
-            iridescence={0.58}
-            iridescenceIOR={1.3}
-            reflectivity={1}
-            attenuationColor="#d6c0ff"
-            attenuationDistance={2.35}
-            envMapIntensity={0.46}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      </group>
-
-      <mesh scale={[0.38, 0.2, 0.08]} position={[-0.34, 0.36, 0.9]} rotation={[-0.28, -0.3, 0.26]}>
-        <sphereGeometry args={[1, 48, 48]} />
-        <meshBasicMaterial color="#d9c8ff" transparent opacity={0.07} depthWrite={false} />
-      </mesh>
-
-      <mesh scale={[0.18, 0.09, 0.06]} position={[0.16, -0.08, 0.94]} rotation={[0.12, 0.32, -0.18]}>
-        <sphereGeometry args={[1, 32, 32]} />
-        <meshBasicMaterial color="#ff8fc8" transparent opacity={0.07} depthWrite={false} />
-      </mesh>
-    </group>
-  );
-}
-
-function hexToRgba(hex, alpha) {
-  const normalized = hex.replace("#", "");
-  const safe = normalized.length === 3
-    ? normalized.split("").map((part) => part + part).join("")
-    : normalized;
-  const value = Number.parseInt(safe, 16);
-  const r = (value >> 16) & 255;
-  const g = (value >> 8) & 255;
-  const b = value & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function accentVars(accent) {
-  return {
-    "--accent": accent,
-    "--accent-soft": hexToRgba(accent, 0.18),
-    "--accent-mid": hexToRgba(accent, 0.14),
-    "--accent-glow": hexToRgba(accent, 0.32)
-  };
-}
-
-function usePointerCapability() {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setEnabled(mediaQuery.matches && window.innerWidth >= 640);
-
-    update();
-    mediaQuery.addEventListener?.("change", update);
-    window.addEventListener("resize", update);
-
-    return () => {
-      mediaQuery.removeEventListener?.("change", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-
-  return enabled;
-}
-
-function useSpotlight(ref) {
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) {
-      return undefined;
-    }
-
-    const onMove = (event) => {
-      const rect = node.getBoundingClientRect();
-      node.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
-      node.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
-      node.style.setProperty("--spot-opacity", "1");
-    };
-
-    const onLeave = () => node.style.setProperty("--spot-opacity", "0");
-
-    node.addEventListener("mousemove", onMove);
-    node.addEventListener("mouseleave", onLeave);
-    return () => {
-      node.removeEventListener("mousemove", onMove);
-      node.removeEventListener("mouseleave", onLeave);
-    };
-  }, [ref]);
-}
-
-function MagneticButton({ href, children, className, canHover, external = false }) {
-  const ref = useRef(null);
-  const [transform, setTransform] = useState("translate3d(0px, 0px, 0)");
-
-  const handleMove = (event) => {
-    if (!canHover || !ref.current) {
-      return;
-    }
-
-    const rect = ref.current.getBoundingClientRect();
-    const x = event.clientX - rect.left - rect.width / 2;
-    const y = event.clientY - rect.top - rect.height / 2;
-    setTransform(`translate3d(${(x * 0.3).toFixed(2)}px, ${(y * 0.3).toFixed(2)}px, 0)`);
-  };
-
+function ExternalLink({ href, children, primary = false }) {
   return (
     <a
-      ref={ref}
+      className={primary ? "project-link project-link-primary" : "project-link"}
       href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noreferrer" : undefined}
-      className={className}
-      style={{ transform }}
-      data-cursor="button"
-      onMouseMove={handleMove}
-      onMouseLeave={() => setTransform("translate3d(0px, 0px, 0)")}
+      target="_blank"
+      rel="noopener noreferrer"
     >
       {children}
+      <span aria-hidden="true">↗</span>
     </a>
   );
 }
 
-function TiltCard({
-  children,
-  className = "",
-  accent = "#6366f1",
-  canHover,
-  style,
-  intensity = 12,
-  hoverLift = -6,
-  ...props
-}) {
-  const ref = useRef(null);
-  const motionRef = useRef(null);
-  const frameRef = useRef(0);
-  const targetRef = useRef({ rotateX: 0, rotateY: 0, lift: 0 });
-  const currentRef = useRef({ rotateX: 0, rotateY: 0, lift: 0 });
-
-  useEffect(() => {
-    if (!motionRef.current) {
-      return undefined;
-    }
-
-    if (!canHover) {
-      motionRef.current.style.transform = "perspective(980px) rotateX(0deg) rotateY(0deg) translate3d(0,0,0)";
-      return undefined;
-    }
-
-    const animate = () => {
-      const current = currentRef.current;
-      const target = targetRef.current;
-
-      current.rotateX += (target.rotateX - current.rotateX) * 0.14;
-      current.rotateY += (target.rotateY - current.rotateY) * 0.14;
-      current.lift += (target.lift - current.lift) * 0.12;
-
-      if (motionRef.current) {
-        motionRef.current.style.transform = `perspective(980px) rotateX(${current.rotateX.toFixed(2)}deg) rotateY(${current.rotateY.toFixed(2)}deg) translate3d(0, ${current.lift.toFixed(2)}px, 0)`;
-      }
-
-      frameRef.current = window.requestAnimationFrame(animate);
-    };
-
-    frameRef.current = window.requestAnimationFrame(animate);
-
-    return () => {
-      window.cancelAnimationFrame(frameRef.current);
-    };
-  }, [canHover]);
-
-  const handleMove = (event) => {
-    if (!canHover || !ref.current) {
-      return;
-    }
-
-    const rect = ref.current.getBoundingClientRect();
-    const px = (event.clientX - rect.left) / rect.width;
-    const py = (event.clientY - rect.top) / rect.height;
-    const rotateY = (px - 0.5) * intensity;
-    const rotateX = (0.5 - py) * intensity;
-
-    ref.current.style.setProperty("--glow-x", `${(px * 100).toFixed(1)}%`);
-    ref.current.style.setProperty("--glow-y", `${(py * 100).toFixed(1)}%`);
-    targetRef.current.rotateX = rotateX;
-    targetRef.current.rotateY = rotateY;
-    targetRef.current.lift = hoverLift;
-  };
-
+function ProjectVisual({ project }) {
   return (
-    <div
-      ref={ref}
-      className={`tilt-frame ${className}`}
-      style={{ ...accentVars(accent), ...style }}
-      onMouseMove={handleMove}
-      onMouseEnter={() => {
-        targetRef.current.lift = hoverLift;
-      }}
-      onMouseLeave={() => {
-        targetRef.current.rotateX = 0;
-        targetRef.current.rotateY = 0;
-        targetRef.current.lift = 0;
-      }}
-      {...props}
-    >
-      <div ref={motionRef} className="tilt-motion">
-        {children}
+    <aside className={`project-visual project-visual-${project.visual}`} aria-label={`${project.name} system view`}>
+      <div className="visual-header">
+        <span>System view</span>
+        <span>{project.number} / 03</span>
       </div>
-    </div>
+
+      {project.visual === "cinestream" && (
+        <div className="visual-content visual-content-cinestream">
+          <div className="play-orbit"><span className="play-symbol" aria-hidden="true">▶</span></div>
+          <div className="visual-flow"><span>MediaStore</span><span aria-hidden="true">→</span><span>Media3</span></div>
+          <p>On-device FFmpeg fallback</p>
+        </div>
+      )}
+
+      {project.visual === "kiepl" && (
+        <div className="visual-content visual-content-kiepl">
+          <div className="access-line"><span>01</span><strong>Identity + App Check</strong></div>
+          <div className="access-line"><span>02</span><strong>Server-side roles</strong></div>
+          <div className="access-line"><span>03</span><strong>Scoped data access</strong></div>
+          <p>Verified access boundary</p>
+        </div>
+      )}
+
+      {project.visual === "cardbox" && (
+        <div className="visual-content visual-content-cardbox">
+          <div className="voice-bars" aria-hidden="true"><span /><span /><span /><span /><span /><span /><span /><span /><span /></div>
+          <div className="voice-label">Voice-led discovery</div>
+          <div className="visual-flow"><span>Speech</span><span aria-hidden="true">→</span><span>Intent</span><span aria-hidden="true">→</span><span>Results</span></div>
+          <p>Deterministic fallback</p>
+        </div>
+      )}
+    </aside>
   );
 }
 
-function ProjectCard({ project, index, canHover }) {
-  const cardRef = useRef(null);
-  const isExternal = /^https?:\/\//.test(project.link);
-
-  const handleMove = (event) => {
-    if (!canHover || !cardRef.current) {
-      return;
-    }
-
-    const rect = cardRef.current.getBoundingClientRect();
-    cardRef.current.style.setProperty("--glow-x", `${((event.clientX - rect.left) / rect.width) * 100}%`);
-    cardRef.current.style.setProperty("--glow-y", `${((event.clientY - rect.top) / rect.height) * 100}%`);
-  };
-
+export default function AdityaPortfolio() {
   return (
-    <TiltCard
-      className="reveal-item h-full"
-      accent={project.accent}
-      canHover={canHover}
-      intensity={16}
-      hoverLift={-10}
-      data-reveal="true"
-      style={{ "--delay": `${index * 120}ms` }}
-    >
-      <article
-        ref={cardRef}
-        className="project-card glass-card flex h-full flex-col justify-between"
-        data-cursor="project"
-        style={accentVars(project.accent)}
-        onMouseMove={handleMove}
-      >
-        <div className="relative z-[1] flex items-start justify-between gap-4">
-          <div className="space-y-3">
-            <p className="text-sm uppercase tracking-[0.28em]" style={{ color: project.accent }}>
-              {project.tag}
-            </p>
-            <h3 className="syne tilt-depth text-[clamp(1.5rem,2vw,2.1rem)] font-extrabold leading-none tracking-[-0.04em]">
-              {project.name}
-            </h3>
-          </div>
-          <a
-            href={project.link}
-            target={isExternal ? "_blank" : undefined}
-            rel={isExternal ? "noreferrer" : undefined}
-            aria-label={`Open ${project.name}`}
-            className="project-link"
-            data-cursor="button"
-          >
-            <span aria-hidden="true">↗</span>
+    <div className="site-shell">
+      <a className="skip-link" href="#main">Skip to content</a>
+
+      <header className="site-header">
+        <div className="container header-inner">
+          <a className="wordmark" href="#top" aria-label="Aditya Kumar, back to top">
+            aditya<span>.</span>
           </a>
+          <nav className="site-nav" aria-label="Primary navigation">
+            <a href="#work">Work</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+          </nav>
         </div>
-
-        <div className="relative z-[1] mt-8 space-y-6">
-          <p className="max-w-[42ch] text-[1rem] leading-7 text-[rgba(240,240,245,0.78)]">{project.description}</p>
-          <div className="flex flex-wrap gap-2">
-            {project.tech.map((tech) => (
-              <span
-                key={tech}
-                className="rounded-full px-3 py-2 text-sm font-medium"
-                style={{ background: hexToRgba(project.accent, 0.15), color: project.accent }}
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-        </div>
-      </article>
-    </TiltCard>
-  );
-}
-
-function StatCard({ stat, index, canHover }) {
-  return (
-    <TiltCard accent={index % 2 === 0 ? "#f97316" : "#6366f1"} canHover={canHover}>
-      <div className="glass-card rounded-[1.6rem] p-6 lg:p-7">
-        <div className="tilt-depth">
-          <div className="syne text-[clamp(2rem,4vw,3.5rem)] font-extrabold leading-none tracking-[-0.06em]">
-            {stat.value}
-          </div>
-          <p className="mt-3 max-w-[12rem] text-sm leading-6 text-[rgba(240,240,245,0.7)]">{stat.label}</p>
-        </div>
-      </div>
-    </TiltCard>
-  );
-}
-
-// SVG icons for contact app icon buttons
-const MailSVG = ({ size = 26 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <polyline points="2,4 12,13 22,4" />
-  </svg>
-);
-
-const GitHubSVG = ({ size = 26 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
-  </svg>
-);
-
-const InstaSVG = ({ size = 26 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-    <circle cx="12" cy="12" r="4.5" />
-    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-  </svg>
-);
-
-// Frosted glass app icon component
-function AppIcon({ href, icon, label, accentColor, external = true }) {
-  return (
-    <a
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noreferrer" : undefined}
-      className="app-icon-wrap"
-      data-cursor="button"
-    >
-      <div
-        className="app-icon-box"
-        style={accentColor ? { borderColor: hexToRgba(accentColor, 0.28), boxShadow: `0 8px 28px rgba(0,0,0,.35), 0 0 0 0 ${hexToRgba(accentColor, 0)}, inset 0 1px 0 rgba(255,255,255,.08)` } : {}}
-      >
-        <span style={{ color: accentColor || "rgba(240,240,245,0.88)" }}>
-          {icon}
-        </span>
-      </div>
-      <span className="app-icon-label">{label}</span>
-    </a>
-  );
-}
-
-function AdityaPortfolio() {
-  const heroRef = useRef(null);
-  const workRef = useRef(null);
-  const skillsRef = useRef(null);
-  const contactRef = useRef(null);
-  const orbMotionRef = useRef({
-    x: 0,
-    y: 0,
-    driftX: 0,
-    driftY: 0,
-    tiltX: 0,
-    tiltY: 0,
-    energy: 0.18,
-    splash: 0.06,
-    scale: 1,
-    hue: 0,
-    lastScrollY: 0
-  });
-  const cursorDotRef = useRef(null);
-  const cursorRingRef = useRef(null);
-  const cursorRef = useRef({ dotX: 0, dotY: 0, ringX: 0, ringY: 0, targetX: 0, targetY: 0, mode: "default", visible: false });
-
-  const [heroReady, setHeroReady] = useState(false);
-  const [typedCount, setTypedCount] = useState(0);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [navSolid, setNavSolid] = useState(false);
-  const [activeSection, setActiveSection] = useState("work");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [counters, setCounters] = useState({ projects: 0, domains: 0, philosophy: 0 });
-  const [cursorMode, setCursorMode] = useState("default");
-  const [cursorVisible, setCursorVisible] = useState(false);
-  const canHover = usePointerCapability();
-
-  useSpotlight(heroRef);
-  useSpotlight(workRef);
-  useSpotlight(skillsRef);
-  useSpotlight(contactRef);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setHeroReady(true), 80);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (typedCount >= titleSource.length) {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setTypedCount((count) => count + 1), typedCount === 8 ? 180 : 78);
-    return () => window.clearTimeout(timer);
-  }, [typedCount]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const onScroll = () => {
-      const scrollTop = window.scrollY;
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      setScrollProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0);
-      setNavSolid(scrollTop > 60);
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") {
-      return undefined;
-    }
-
-    const sections = [workRef.current, skillsRef.current, contactRef.current].filter(Boolean);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const current = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (current?.target?.id) {
-          setActiveSection(current.target.id);
-        }
-      },
-      { threshold: [0.25, 0.5, 0.75], rootMargin: "-20% 0px -35% 0px" }
-    );
-
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") {
-      return undefined;
-    }
-
-    const nodes = Array.from(document.querySelectorAll("[data-reveal='true']"));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.18, rootMargin: "0px 0px -10% 0px" }
-    );
-
-    nodes.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!skillsRef.current || typeof IntersectionObserver === "undefined") {
-      return undefined;
-    }
-
-    let frame = 0;
-    let started = false;
-    const target = skillsRef.current;
-
-    const animate = () => {
-      const startedAt = performance.now();
-      const duration = 1200;
-      const tick = (now) => {
-        const progress = Math.min((now - startedAt) / duration, 1);
-        const eased = 1 - (1 - progress) * (1 - progress);
-        setCounters({
-          projects: Math.round(COUNTER_TARGETS[0].value * eased),
-          domains: Math.round(COUNTER_TARGETS[1].value * eased),
-          philosophy: Math.round(COUNTER_TARGETS[2].value * eased)
-        });
-        if (progress < 1) {
-          frame = window.requestAnimationFrame(tick);
-        }
-      };
-      frame = window.requestAnimationFrame(tick);
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && !started) {
-          started = true;
-          animate();
-          observer.disconnect();
-        }
-      });
-    }, { threshold: 0.35 });
-
-    observer.observe(target);
-    return () => {
-      observer.disconnect();
-      window.cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!canHover) {
-      return undefined;
-    }
-
-    let frame = 0;
-
-    const onMove = (event) => {
-      const state = cursorRef.current;
-      state.targetX = event.clientX;
-      state.targetY = event.clientY;
-      state.dotX = event.clientX;
-      state.dotY = event.clientY;
-      if (!state.visible) {
-        state.visible = true;
-        setCursorVisible(true);
-      }
-    };
-
-    const onLeave = () => {
-      cursorRef.current.visible = false;
-      setCursorVisible(false);
-    };
-
-    const onHover = (event) => {
-      const nextMode = event.target.closest?.("[data-cursor]")?.getAttribute("data-cursor") || "default";
-      cursorRef.current.mode = nextMode;
-      setCursorMode((current) => (current === nextMode ? current : nextMode));
-    };
-
-    const render = () => {
-      const state = cursorRef.current;
-      state.ringX += (state.targetX - state.ringX) * 0.18;
-      state.ringY += (state.targetY - state.ringY) * 0.18;
-      const ringSize = state.mode === "project" ? 56 : state.mode === "button" ? 48 : 32;
-      if (cursorDotRef.current) {
-        cursorDotRef.current.style.transform = `translate3d(${state.dotX - 3}px, ${state.dotY - 3}px, 0)`;
-      }
-      if (cursorRingRef.current) {
-        cursorRingRef.current.style.transform = `translate3d(${state.ringX - ringSize / 2}px, ${state.ringY - ringSize / 2}px, 0)`;
-      }
-      frame = window.requestAnimationFrame(render);
-    };
-
-    window.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseleave", onLeave);
-    window.addEventListener("blur", onLeave);
-    document.addEventListener("mouseover", onHover);
-    document.addEventListener("focusin", onHover);
-    frame = window.requestAnimationFrame(render);
-
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseleave", onLeave);
-      window.removeEventListener("blur", onLeave);
-      document.removeEventListener("mouseover", onHover);
-      document.removeEventListener("focusin", onHover);
-      window.cancelAnimationFrame(frame);
-    };
-  }, [canHover]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const motion = orbMotionRef.current;
-    motion.lastScrollY = window.scrollY;
-
-    const excite = (energy, splash = 0.22, scale = 1.02) => {
-      motion.energy = Math.min(1, Math.max(motion.energy, energy));
-      motion.splash = Math.min(1, Math.max(motion.splash, splash));
-      motion.scale = Math.max(motion.scale, scale);
-    };
-
-    const handlePointer = (clientX, clientY, intensity) => {
-      const xRatio = clientX / window.innerWidth - 0.5;
-      const yRatio = clientY / window.innerHeight - 0.5;
-
-      motion.x = xRatio * 0.66;
-      motion.y = yRatio * -0.42;
-      motion.driftX = xRatio * 0.22;
-      motion.driftY = yRatio * -0.18;
-      motion.tiltX = yRatio * -0.42;
-      motion.tiltY = xRatio * 0.7;
-      motion.hue = xRatio * 20 + yRatio * -12;
-      excite(0.46 + intensity * 0.34, 0.16 + intensity * 0.18, 1.01 + intensity * 0.05);
-    };
-
-    const onMouseMove = (event) => {
-      handlePointer(event.clientX, event.clientY, 0.9);
-    };
-
-    const onTouchMove = (event) => {
-      const touch = event.touches?.[0];
-      if (!touch) {
-        return;
-      }
-      handlePointer(touch.clientX, touch.clientY, 0.62);
-    };
-
-    const onScroll = () => {
-      const currentScrollY = window.scrollY;
-      const delta = currentScrollY - motion.lastScrollY;
-      const velocity = Math.min(1.3, Math.abs(delta) / 22);
-      motion.lastScrollY = currentScrollY;
-
-      motion.x = Math.sin(currentScrollY * 0.0036) * (0.18 + velocity * 0.2);
-      motion.y = Math.max(-0.56, Math.min(0.34, currentScrollY * -0.00072));
-      motion.driftX = Math.cos(currentScrollY * 0.0044) * (0.06 + velocity * 0.12);
-      motion.driftY = Math.sin(currentScrollY * 0.0052) * (0.06 + velocity * 0.1);
-      motion.tiltX = Math.max(-0.42, Math.min(0.42, delta * -0.006));
-      motion.tiltY = Math.sin(currentScrollY * 0.0028) * (0.14 + velocity * 0.18);
-      motion.hue = Math.sin(currentScrollY * 0.0032) * 22 + velocity * 10;
-      excite(0.34 + velocity * 0.5, 0.12 + velocity * 0.34, 1.01 + velocity * 0.06);
-    };
-
-    window.addEventListener("mousemove", onMouseMove, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [menuOpen]);
-
-  useEffect(() => {
-    if (!menuOpen) {
-      return undefined;
-    }
-
-    const onResize = () => {
-      if (window.innerWidth >= 1024) {
-        setMenuOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [menuOpen]);
-
-  const typed = titleSource.slice(0, typedCount);
-  const [lineOne = "", lineTwo = ""] = typed.split("\n");
-  const typingDone = typedCount >= titleSource.length;
-
-  const scrollToSection = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    setMenuOpen(false);
-  };
-
-  return (
-    <div className="aditya-portfolio">
-      <style>{STYLES}</style>
-      <div className="scroll-progress" style={{ "--progress": `${scrollProgress}%` }} />
-      <div className="aditya-noise" />
-      <RealOrbScene motionRef={orbMotionRef} canHover={canHover} />
-      <div className="orb orb-one" />
-      <div className="orb orb-two" />
-      <div className="orb orb-three" />
-
-      <div
-        ref={cursorDotRef}
-        className={`cursor-dot ${cursorVisible && canHover ? "is-active" : ""} ${cursorMode !== "default" ? "is-hidden" : ""}`}
-      />
-      <div
-        ref={cursorRingRef}
-        className={`cursor-ring ${cursorVisible && canHover ? "is-active" : ""} ${cursorMode === "button" ? "mode-button" : ""} ${cursorMode === "project" ? "mode-project" : ""}`}
-      >
-        {cursorMode === "project" ? "VIEW" : ""}
-      </div>
-
-      <header
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${navSolid ? "border-b border-white/10 bg-[rgba(8,8,16,0.62)] backdrop-blur-2xl" : "bg-transparent"}`}
-      >
-        <nav className="mx-auto flex max-w-[var(--max)] items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            className="syne flex items-center gap-1 text-xl font-extrabold tracking-[0.18em] text-white sm:text-2xl"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            data-cursor="button"
-          >
-            <span>ADITYA</span>
-            <span className="text-[#f97316]">.</span>
-          </button>
-
-          <div className="hidden items-center gap-8 lg:flex">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`nav-link text-sm font-medium ${activeSection === item.id ? "is-active" : ""}`}
-                onClick={() => scrollToSection(item.id)}
-                data-cursor="button"
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className={`menu-button lg:hidden ${menuOpen ? "is-open" : ""}`}
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            data-cursor="button"
-          >
-            <span />
-            <span />
-          </button>
-        </nav>
       </header>
 
-      <div className={`mobile-menu lg:hidden ${menuOpen ? "is-open" : ""}`}>
-        <div className="mx-auto flex max-w-xl flex-col gap-6">
-          <div className="mobile-menu-top">
-            <button
-              type="button"
-              className="syne flex items-center gap-1 text-xl font-extrabold tracking-[0.18em] text-white"
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-                setMenuOpen(false);
-              }}
-              data-cursor="button"
-            >
-              <span>ADITYA</span>
-              <span className="text-[#f97316]">.</span>
-            </button>
-
-            <button
-              type="button"
-              className="mobile-close"
-              onClick={() => setMenuOpen(false)}
-              aria-label="Close menu"
-              data-cursor="button"
-            >
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className="syne text-left text-[clamp(2rem,8vw,3.4rem)] font-extrabold tracking-[-0.06em] text-white"
-              onClick={() => scrollToSection(item.id)}
-              data-cursor="button"
-            >
-              {item.label}
-            </button>
-          ))}
-          <MagneticButton
-            href="mailto:adityakumar3575@gmail.com"
-            className="btn-base btn-primary mt-4 w-full justify-center"
-            canHover={canHover}
-          >
-            Get in touch <span aria-hidden="true">→</span>
-          </MagneticButton>
-        </div>
-      </div>
-
-      <main className="relative z-10">
-        <section
-          ref={heroRef}
-          className="section-wrap relative flex min-h-[auto] items-start px-5 pb-16 pt-24 sm:min-h-screen sm:px-6 sm:pb-24 sm:pt-28 lg:items-center lg:px-8"
-        >
-          <div className="mx-auto grid max-w-[var(--max)] items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="max-w-3xl">
-              <div className={`flex flex-wrap gap-3 reveal-item ${heroReady ? "is-visible" : ""}`} style={{ "--delay": "60ms" }}>
-                <div className="hero-tag glass-card">
-                  <span className="pulse-dot" />
-                  <span>Available for serious projects</span>
-                </div>
-                <div className="hero-tag glass-card">
-                  <span className="status-dot" />
-                  <span>Currently building: CineStream v9 · Android</span>
-                </div>
-              </div>
-
-              <div className={`mt-10 sm:mt-12 reveal-item ${heroReady ? "is-visible" : ""}`} style={{ "--delay": "160ms" }}>
-                <h1 className="hero-title syne font-extrabold">
-                  <span className="type-line">{lineOne || "\u00A0"}</span>
-                  <span className="type-line text-gradient">
-                    {lineTwo || "\u00A0"}
-                    {!typingDone ? <span className="type-caret" /> : null}
-                  </span>
-                </h1>
-              </div>
-
-              <div className={`hero-copy mt-8 ${typingDone ? "is-visible" : ""}`}>
-                <p className="hero-subtitle">
-                  I build systems, not just code — Android, AI, ERP, Web. Based in Bhagalpur. Working globally.
-                </p>
-
-                {/* Hero CTAs */}
-                <div className="hero-cta-row mt-8 flex flex-row items-center gap-8 sm:gap-5">
-                  {/* Get in touch — frosted glass pill with mail icon */}
-                  <a
-                    href="mailto:adityakumar3575@gmail.com"
-                    data-cursor="button"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.65rem",
-                      padding: "0.6rem 1.2rem 0.6rem 0.7rem",
-                      borderRadius: "999px",
-                      background: "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(24px)",
-                      WebkitBackdropFilter: "blur(24px)",
-                      border: "1px solid rgba(249,115,22,0.3)",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)",
-                      color: "rgba(240,240,245,0.92)",
-                      textDecoration: "none",
-                      fontSize: "0.9rem",
-                      fontWeight: 500,
-                      letterSpacing: "0.01em",
-                      transition: "background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease",
-                      flexShrink: 0,
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = "rgba(249,115,22,0.12)";
-                      e.currentTarget.style.borderColor = "rgba(249,115,22,0.55)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 8px 28px rgba(249,115,22,0.2), inset 0 1px 0 rgba(255,255,255,0.1)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                      e.currentTarget.style.borderColor = "rgba(249,115,22,0.3)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)";
-                    }}
-                  >
-                    <span style={{
-                      width: "2rem", height: "2rem", borderRadius: "0.55rem",
-                      background: "linear-gradient(135deg,#f97316,#fb923c)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                      boxShadow: "0 2px 10px rgba(249,115,22,0.4)",
-                    }}>
-                      <MailSVG size={14} />
-                    </span>
-                    <span>Get in touch</span>
-                    <span style={{ color: "rgba(240,240,245,0.4)", fontSize: "0.8rem" }}>↗</span>
-                  </a>
-
-                  {/* GitHub — floating circle icon only */}
-                  <a
-                    href="https://github.com/exor-26"
-                    target="_blank"
-                    rel="noreferrer"
-                    data-cursor="button"
-                    className="github-float"
-                    style={{
-                      width: "3rem", height: "3rem",
-                      borderRadius: "999px",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                      background: "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(24px)",
-                      WebkitBackdropFilter: "blur(24px)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)",
-                      color: "rgba(240,240,245,0.82)",
-                      textDecoration: "none",
-                      transition: "background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
-                      e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)";
-                    }}
-                  >
-                    <GitHubSVG size={20} />
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="hidden lg:block">
-              <div className="grid gap-5">
-                {HERO_STATS.map((stat, index) => (
-                  <StatCard key={stat.label} stat={stat} index={index} canHover={canHover} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="scroll-indicator hidden lg:inline-flex"
-            onClick={() => scrollToSection("work")}
-            aria-label="Scroll to selected work"
-            data-cursor="button"
-          >
-            <span className="text-lg">⌄</span>
-          </button>
-        </section>
-
-        <section className="px-5 pb-10 sm:px-6 lg:px-8">
-          <div className="marquee-shell mx-auto max-w-[var(--max)] space-y-4">
-            {MARQUEE_ROWS.map((row, rowIndex) => (
-              <div
-                key={`row-${rowIndex}`}
-                className="marquee-row overflow-hidden"
-                data-direction={rowIndex === 1 ? "reverse" : "forward"}
-              >
-                <div className="marquee-track">
-                  {[...row, ...row].map((item, itemIndex) => (
-                    <span key={`${item}-${itemIndex}`} className="pill text-sm sm:text-base">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="work" ref={workRef} className="section-wrap px-5 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[var(--max)]">
-            <div className="mb-12 max-w-2xl space-y-4">
-              <p className="section-kicker">Selected Work</p>
-              <h2 className="section-title syne font-extrabold">Things I&apos;ve built</h2>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {PROJECTS.map((project, index) => (
-                <ProjectCard key={project.name} project={project} index={index} canHover={canHover} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="skills" ref={skillsRef} className="section-wrap px-5 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[var(--max)]">
-            <div className="mb-12 max-w-2xl space-y-4">
-              <p className="section-kicker">Skills</p>
-              <h2 className="section-title syne font-extrabold">What I work with</h2>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-3">
-              {COUNTER_TARGETS.map((item, index) => (
-                <div
-                  key={item.key}
-                  className="counter-card glass-card reveal-item"
-                  data-reveal="true"
-                  style={{ "--delay": `${index * 120}ms` }}
-                >
-                  {/* Counter value now uses accent color per item */}
-                  <div className="counter-value" style={{ color: item.color }}>
-                    {counters[item.key]}
-                    {item.suffix}
-                  </div>
-                  <p className="mt-3 text-sm uppercase tracking-[0.24em] text-[rgba(240,240,245,0.56)]">
-                    {item.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="glass-card reveal-item mt-8 p-5 sm:p-7" data-reveal="true" style={{ "--delay": "120ms", borderRadius: "1.75rem" }}>
-              <div className="flex flex-wrap gap-3">
-                {SKILLS.map((skill) => (
-                  <span key={skill} className="pill skill-chip">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="cinema-card glass-card reveal-item mt-8 p-6 sm:p-8 lg:p-10" data-reveal="true" style={{ "--delay": "180ms", borderRadius: "2rem" }}>
-              <div className="grid items-center gap-5 lg:grid-cols-[auto_1fr]">
-                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(249,115,22,0.22),rgba(99,102,241,0.25))] text-5xl shadow-[0_12px_44px_rgba(0,0,0,0.24)] sm:h-28 sm:w-28 lg:mx-0">
-                  <span aria-hidden="true">🎬</span>
-                </div>
-                <div className="space-y-4 text-center lg:text-left">
-                  {/* Cinematography: white-space nowrap prevents word split */}
-                  <h3 className="cinema-title syne font-extrabold">
-                    Cinematography
-                  </h3>
-                  <p className="cinema-copy text-[1rem] leading-7 text-[rgba(240,240,245,0.78)]">
-                    Beyond code — I shoot and grade cinematic visuals. Creative techniques, visual storytelling.
-                    See the work:
-                  </p>
-                  <a
-                    href="https://instagram.com/exor_qz"
-                    target="_blank"
-                    rel="noreferrer"
-                    data-cursor="button"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.65rem",
-                      padding: "0.6rem 1.1rem 0.6rem 0.7rem",
-                      borderRadius: "999px",
-                      background: "rgba(255,255,255,0.05)",
-                      backdropFilter: "blur(24px)",
-                      WebkitBackdropFilter: "blur(24px)",
-                      border: "1px solid rgba(168,85,247,0.28)",
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)",
-                      color: "rgba(240,240,245,0.92)",
-                      textDecoration: "none",
-                      fontSize: "0.9rem",
-                      fontWeight: 500,
-                      letterSpacing: "0.01em",
-                      transition: "background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = "rgba(168,85,247,0.14)";
-                      e.currentTarget.style.borderColor = "rgba(168,85,247,0.55)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow = "0 8px 28px rgba(168,85,247,0.22), inset 0 1px 0 rgba(255,255,255,0.1)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                      e.currentTarget.style.borderColor = "rgba(168,85,247,0.28)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)";
-                    }}
-                  >
-                    <span style={{
-                      width: "2rem", height: "2rem", borderRadius: "0.55rem",
-                      background: "linear-gradient(135deg,#f97316,#a855f7)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                      boxShadow: "0 2px 10px rgba(168,85,247,0.35)"
-                    }}>
-                      <InstaSVG size={14} />
-                    </span>
-                    <span>@exor_qz</span>
-                    <span style={{ color: "rgba(240,240,245,0.4)", fontSize: "0.8rem" }}>↗</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="contact" ref={contactRef} className="section-wrap px-5 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[var(--max)]">
-            <div className="contact-card glass-card reveal-item text-center" data-reveal="true">
-              <p className="section-kicker">Let&apos;s Build Something</p>
-              <h2 className="section-title syne mt-4 font-extrabold">Got a serious project?</h2>
-              <p className="mx-auto mt-6 max-w-2xl text-[clamp(1rem,1.35vw,1.1rem)] leading-8 text-[rgba(240,240,245,0.78)]">
-                Clear scope. Proper agreement. Clean execution. No guesswork, no free demos — just real work.
+      <main id="main">
+        <section className="hero" id="top" aria-labelledby="hero-title">
+          <div className="container hero-inner">
+            <div className="hero-copy">
+              <p className="eyebrow"><span className="eyebrow-line" /> Aditya Kumar · Product &amp; Systems Engineer</p>
+              <h1 id="hero-title">Software built for <em>real use.</em></h1>
+              <p className="hero-description">
+                I design and build Android products and operational systems,
+                from media playback to service discovery and internal business tools.
               </p>
-
-              {/* Frosted glass app icon buttons — always horizontal row */}
-              <div className="app-icon-row">
-                <AppIcon
-                  href="mailto:adityakumar3575@gmail.com"
-                  icon={<MailSVG />}
-                  label="Email"
-                  accentColor="#f97316"
-                  external={false}
-                />
-                <AppIcon
-                  href="https://github.com/exor-26"
-                  icon={<GitHubSVG size={26} />}
-                  label="GitHub"
-                  accentColor="rgba(240,240,245,0.88)"
-                />
-                <AppIcon
-                  href="https://instagram.com/exor_qz"
-                  icon={<InstaSVG />}
-                  label="Instagram"
-                  accentColor="#a855f7"
-                />
+              <div className="hero-actions">
+                <a className="button button-primary" href="#work">
+                  Explore selected work <span aria-hidden="true">↘</span>
+                </a>
+                <a className="button button-secondary" href="mailto:adityakumar3575@gmail.com">
+                  Get in touch <span aria-hidden="true">↗</span>
+                </a>
               </div>
+            </div>
+            <div className="hero-aside" aria-label="Professional focus">
+              <span className="aside-heading">Based in Bhagalpur, India</span>
+              <span>Android products</span>
+              <span>Operational platforms</span>
+              <span>Architecture &amp; delivery</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="work-section" id="work" aria-labelledby="work-title">
+          <div className="container">
+            <div className="section-intro">
+              <div>
+                <p className="section-kicker">01 / Selected work</p>
+                <h2 id="work-title">Three systems. Different constraints.</h2>
+              </div>
+              <p>
+                Public software and client platforms, each described at its
+                actual stage of delivery.
+              </p>
+            </div>
+
+            <div className="project-list">
+              {projects.map((project) => (
+                <article className="project" key={project.name}>
+                  <div className="project-index">{project.number}</div>
+                  <div className="project-main">
+                    <div className="project-topline">
+                      <span className="project-category">{project.category}</span>
+                      <span className="project-status">{project.status}</span>
+                    </div>
+                    <div className="project-layout">
+                      <div className="project-copy">
+                        <h3>{project.name}</h3>
+                        <p className="project-description">{project.description}</p>
+                        <p className="project-detail">{project.detail}</p>
+                        <ul className="technology-list" aria-label={project.name + " technologies"}>
+                          {project.technologies.map((technology) => (
+                            <li key={technology}>{technology}</li>
+                          ))}
+                        </ul>
+                        <div className="project-footer">
+                          <div className="project-links">
+                            {project.links.map((link) => (
+                              <ExternalLink key={link.label} href={link.href} primary={link.primary}>
+                                {link.label}
+                              </ExternalLink>
+                            ))}
+                          </div>
+                          {project.note && <p className="project-note">{project.note}</p>}
+                        </div>
+                      </div>
+                      <ProjectVisual project={project} />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="about-section" id="about" aria-labelledby="about-title">
+          <div className="container about-grid">
+            <div>
+              <p className="section-kicker">02 / About</p>
+              <h2 id="about-title">Product thinking, close to the code.</h2>
+            </div>
+            <div className="about-copy">
+              <p>
+                I work across product architecture, mobile development, backend
+                workflows, and security boundaries. My focus is making useful
+                software that can be operated and improved after it ships.
+              </p>
+              <div className="capabilities" aria-label="Areas of work">
+                <span>Android &amp; React Native</span>
+                <span>Backend APIs &amp; Firebase</span>
+                <span>Access control &amp; reliability</span>
+                <span>AI-assisted workflows</span>
+              </div>
+              <p className="work-context">
+                CineStream is my open-source product. KIEPL and CardBox are
+                freelance or contract client work.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="contact-section" id="contact" aria-labelledby="contact-title">
+          <div className="container contact-inner">
+            <p className="section-kicker">03 / Contact</p>
+            <h2 id="contact-title">Have a product to build or improve?</h2>
+            <p>Available for focused freelance and contract work.</p>
+            <div className="contact-links">
+              <a href="mailto:adityakumar3575@gmail.com">adityakumar3575@gmail.com <span aria-hidden="true">↗</span></a>
+              <a href="https://github.com/exor-26" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+              <a href="https://www.linkedin.com/in/aditya-kumar-5b0471334/" target="_blank" rel="noopener noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="relative z-10 px-5 pb-10 pt-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[var(--max)] flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center md:flex-row md:text-left">
-          <p className="footer-copy">Aditya · Software Architect · Bhagalpur, India</p>
-          <p className="footer-copy text-xs uppercase tracking-[0.22em]">Built by me, obviously.</p>
+      <footer className="site-footer">
+        <div className="container footer-inner">
+          <span>© 2026 Aditya Kumar</span>
+          <span>Product &amp; Systems Engineer · Bhagalpur, India</span>
         </div>
       </footer>
     </div>
   );
 }
-
-export default AdityaPortfolio;
