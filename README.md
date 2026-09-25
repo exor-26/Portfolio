@@ -30,4 +30,4 @@ The site uses a self-hosted Manrope Latin font under the SIL Open Font License (
 
 Only CineStream, KIEPL ERP–CRM, and CardBox are featured. CineStream is an independent published product; KIEPL is a live private client platform; CardBox is contract work in development. The KIEPL and CardBox repositories are private and are not linked as public source. Keep security descriptions specific to verified controls and avoid unsupported metrics or guarantees.
 
-The refinement is prepared on `codex/portfolio-refinement` for local review before publishing. To preview a production build on Windows, run `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4174` after the build.
+To preview a production build on Windows, run `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4174` after the build. Production deployments use the existing Netlify project and the repository's `main` branch.
