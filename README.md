@@ -1,6 +1,14 @@
-# Aditya Kumar Portfolio
+# Aditya Kumar — Portfolio
 
-A single-page React and Vite portfolio featuring CineStream, KIEPL ERP–CRM, and CardBox.
+**Product & Systems Engineer**
+
+[Visit the portfolio](https://exor-portfolio.netlify.app/)
+
+A focused presentation of three projects: CineStream, an independent Android product on Google Play; KIEPL ERP–CRM, a live internal client platform; and CardBox, a client service marketplace in development.
+
+Each project explains the purpose, my role, delivery status, and engineering decisions. The interface uses restrained typography, responsive layouts, keyboard-accessible disclosures, and reduced-motion support.
+
+Built with React and Vite. Netlify publishes the static `dist` output from `main`.
 
 ## Local development
 
