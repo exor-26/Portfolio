@@ -10,8 +10,8 @@ export default function AdityaPortfolio() {
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
         <div className="container header-inner">
-          <a className="wordmark" href="#top" aria-label="Aditya Kumar, back to top">
-            Aditya Kumar<span className="wordmark-dot" aria-hidden="true">.</span>
+          <a className="wordmark" href="#top" aria-label="Aditya, back to top">
+            Aditya<span className="wordmark-dot" aria-hidden="true">.</span>
           </a>
           <nav className="site-nav" aria-label="Primary navigation">
             <a href="#work">Work</a>
