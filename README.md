@@ -4,7 +4,7 @@
 
 [Visit the portfolio](https://exor-portfolio.netlify.app/)
 
-A focused presentation of three projects: CineStream, an independent Android product on Google Play; KIEPL ERP–CRM, a live internal client platform; and CardBox, a client service marketplace in development.
+A focused presentation of five projects: CineStream, an independent Android product on Google Play; KIEPL ERP–CRM, a live internal client platform; CardBox, a client service marketplace in development; an AI voice calling agent built for WorkPilot; and Clara, a personal WhatsApp assistant.
 
 Each project explains the purpose, my role, delivery status, and engineering decisions. The interface uses restrained typography, responsive layouts, keyboard-accessible disclosures, and reduced-motion support.
 
@@ -36,6 +36,6 @@ This site has no server component or client-side route paths. Its navigation use
 
 The site uses a self-hosted Manrope Latin font under the SIL Open Font License (`public/fonts/OFL.txt`) and a system serif. It has no analytics, external runtime fonts, or backend. Native HTML disclosures keep engineering details accessible without extra JavaScript state. Reduced-motion preferences are respected.
 
-Only CineStream, KIEPL ERP–CRM, and CardBox are featured. CineStream is an independent published product; KIEPL is a live private client platform; CardBox is contract work in development. The KIEPL and CardBox repositories are private and are not linked as public source. Keep security descriptions specific to verified controls and avoid unsupported metrics or guarantees.
+CineStream is an independent published product. KIEPL is a live private client platform. CardBox and the WorkPilot voice agent are client work in development; WorkPilot's ~₹1.5/min deployment cost is a target, not a measured live rate. Clara is a self-hosted personal system; the ₹0 model API cost applies to its earlier local-LLM edition. Private client source and the current Clara implementation are not linked as public source. Keep security descriptions specific to verified controls and avoid unsupported metrics or guarantees.
 
 To preview a production build on Windows, run `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4174` after the build. Production deployments use the existing Netlify project and the repository's `main` branch.

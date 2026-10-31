@@ -74,6 +74,7 @@ h2 { font-size: 34px; line-height: 1.25; letter-spacing: -1px; }
 .status-development .status-dot { background: transparent; border: 1px solid #797d76; width: 6px; height: 6px; }
 .project-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 96px; align-items: center; }
 .project h3 { font-size: 43px; letter-spacing: -1.7px; line-height: 1.2; }
+.project-kiepl h3 { letter-spacing: -.5px; word-spacing: .18em; }
 .project-headline { font-family: var(--serif); font-size: 23px; line-height: 1.4; margin-top: 11px; }
 .project-description { font-size: 15px; line-height: 1.85; color: var(--muted); margin-top: 19px; max-width: 600px; }
 .project-ownership { margin-top: 24px; }
@@ -208,6 +209,7 @@ details[open] .disclosure-icon::after { transform: rotate(0); }
 }
 @media (max-width: 359px) {
   h1 { font-size: 35px; }
+  .project-kiepl h3 { font-size: 32px; }
   .container { width: calc(100% - 36px); }
   .site-nav { gap: 12px; }
   .wordmark { font-size: 15px; }

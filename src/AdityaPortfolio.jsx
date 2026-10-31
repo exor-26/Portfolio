@@ -50,7 +50,7 @@ export default function AdityaPortfolio() {
               <p className="eyebrow">01 / Proof of work</p>
               <h2 id="work-title">Built around real needs.</h2>
             </div>
-            <p className="section-caption">One independent product.<br />Two client platforms.</p>
+            <p className="section-caption">One independent product.<br />Three client systems.<br />One personal assistant.</p>
           </div>
           <div className="project-list">
             {projects.map(project => <ProjectCaseStudy key={project.id} project={project} />)}
