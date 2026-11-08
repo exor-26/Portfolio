@@ -10,9 +10,11 @@ export default function AdityaPortfolio() {
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
         <div className="container header-inner">
-          <a className="wordmark" href="#top" aria-label="Aditya, back to top">
-            Aditya<span className="wordmark-dot" aria-hidden="true">.</span>
-          </a>
+          <div className="brand-lockup">
+            <a className="wordmark" href="#top" aria-label="Aditya, back to top">Aditya</a>
+            <span className="brand-rule" aria-hidden="true" />
+            <span className="brand-role"><span>Product / Systems</span>{' '}<span>Engineer</span></span>
+          </div>
           <nav className="site-nav" aria-label="Primary navigation">
             <a href="#work">Work</a>
             <a href="#about">About</a>
@@ -23,8 +25,8 @@ export default function AdityaPortfolio() {
 
       <main id="main">
         <section className="hero container" id="top" aria-labelledby="hero-title">
-          <p className="eyebrow"><span className="small-rule" aria-hidden="true" /> Product &amp; Systems Engineer</p>
-          <h1 id="hero-title">I build products<br />and the systems<br className="mobile-break" /> <em>behind them.</em></h1>
+          <p className="eyebrow"><span className="small-rule" aria-hidden="true" /> Public product / private systems</p>
+          <h1 id="hero-title">I build products<br />and the systems{' '}<br className="mobile-break" /><em className="hero-signature">behind them.</em></h1>
           <div className="hero-bottom">
             <div className="hero-copy">
               <p className="hero-description">
@@ -37,8 +39,8 @@ export default function AdityaPortfolio() {
               </div>
             </div>
             <div className="hero-note">
-              <span className="meta-label">Independent work. Real responsibility.</span>
-              <p>My own open-source product.<br />Systems built for clients.</p>
+              <span className="meta-label">Published / live</span>
+              <p>CineStream — on Google Play.<br />KIEPL — live for internal operations.</p>
               <a href="#about">A little about how I work <Arrow /></a>
             </div>
           </div>
@@ -61,7 +63,7 @@ export default function AdityaPortfolio() {
           <div className="container about-grid">
             <div className="about-heading">
               <p className="eyebrow">02 / How I work</p>
-              <h2 id="about-title">The whole product.<br /><em>The small details.</em></h2>
+              <h2 id="about-title">The whole product.<br />The small details.</h2>
               <p className="location">Based in Bhagalpur, India.</p>
             </div>
             <div className="about-copy">
@@ -83,7 +85,7 @@ export default function AdityaPortfolio() {
         <section className="contact-section container" id="contact" aria-labelledby="contact-title">
           <p className="eyebrow">03 / Let’s talk</p>
           <div className="contact-grid">
-            <h2 id="contact-title">Have a product or system that needs <em>careful engineering?</em></h2>
+            <h2 id="contact-title">Have a product or system that needs careful engineering?</h2>
             <div className="contact-copy">
               <p>Available for focused freelance and contract work.</p>
               <a className="contact-email" href={`mailto:${email}`}>{email} <Arrow /></a>
@@ -97,7 +99,7 @@ export default function AdityaPortfolio() {
       </main>
 
       <footer className="site-footer container">
-        <span>© {new Date().getFullYear()} Aditya Kumar</span>
+        <span>© {new Date().getFullYear()} Aditya</span>
         <a href="#top">Back to top <Arrow direction="up" /></a>
       </footer>
     </>

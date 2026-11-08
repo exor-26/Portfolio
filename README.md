@@ -1,4 +1,4 @@
-# Aditya Kumar — Portfolio
+# Aditya — Portfolio
 
 **Product & Systems Engineer**
 
@@ -32,7 +32,7 @@ This site has no server component or client-side route paths. Its navigation use
 - Page sections and personal information: `src/AdityaPortfolio.jsx`.
 - Reusable case studies and links: `src/components/`.
 - Responsive layout and visual tokens: `src/index.css`.
-- Social sharing card: `public/social-preview.png`.
+- Social sharing card: `public/social-preview.png`, with editable SVG at `public/social-preview.svg`.
 
 The site uses a self-hosted Manrope Latin font under the SIL Open Font License (`public/fonts/OFL.txt`) and a system serif. It has no analytics, external runtime fonts, or backend. Native HTML disclosures keep engineering details accessible without extra JavaScript state. Reduced-motion preferences are respected.
 

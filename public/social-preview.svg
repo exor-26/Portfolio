@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f6f3ec"/>
+
+  <text x="72" y="86" fill="#262b2a" font-family="Georgia" font-size="36" letter-spacing="-1">Aditya</text>
+  <path d="M190 73h30" stroke="#67464e" stroke-width="2"/>
+  <text x="239" y="79" fill="#5b615d" font-family="Segoe UI" font-size="14" font-weight="600" letter-spacing="1.4">PRODUCT / SYSTEMS ENGINEER</text>
+  <path d="M72 116h1056" stroke="#d8d7d1" stroke-width="2"/>
+
+  <path d="M72 175h27" stroke="#67464e" stroke-width="2"/>
+  <text x="117" y="180" fill="#5b615d" font-family="Segoe UI" font-size="14" font-weight="600" letter-spacing="2">PUBLIC PRODUCT / PRIVATE SYSTEMS</text>
+
+  <text x="72" y="295" fill="#262b2a" font-family="Segoe UI" font-size="77" letter-spacing="-3">I build products</text>
+  <text x="72" y="390" fill="#262b2a" font-family="Segoe UI" font-size="77" letter-spacing="-3" xml:space="preserve">and the systems <tspan fill="#67464e" font-family="Georgia" font-style="italic" letter-spacing="-2">behind them.</tspan></text>
+
+  <path d="M72 490h1056" stroke="#d8d7d1" stroke-width="2"/>
+  <text x="72" y="539" fill="#5b615d" font-family="Segoe UI" font-size="14" font-weight="600" letter-spacing="2">05 / SELECTED PROJECTS</text>
+  <text x="72" y="582" fill="#262b2a" font-family="Segoe UI" font-size="20">CineStream  /  KIEPL ERP–CRM  /  CardBox  /  Voice Calling Agent  /  Clara</text>
+</svg>
